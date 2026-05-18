@@ -18,15 +18,6 @@ Full project specification: [docs/INFO 4190 - Final Report.pdf](docs/INFO%204190
 3. **ML Prediction** (`ml/`) — Train a model (LSTM or XGBoost regressor) on historical time-series data, generate forecasted arrival times, log predicted-vs-actual for accuracy tracking.
 4. **Dashboard + Admin UI** (`frontend/`) — Route List and Route Details views, responsive down to 360px, plus an admin panel for logs, manual reprocessing, and threshold tuning.
 
-## Key Non-Functional Requirements
-
-- Ingest within 30s of feed timestamp
-- 5s response for at least 90% of common requests
-- Live dashboard updates within 60s
-- 99.5% availability over a one-month evaluation window
-- No PII; encrypted transport; RBAC on admin functions
-- Modular architecture — ingestion has highest priority and must not fail when other subsystems fail
-
 ## Directory Layout
 
 ```
@@ -37,4 +28,3 @@ RealTimeTransit/
   docs/       # Final report and any future design docs
 ```
 
-Tech stack to be decided in a follow-up session.
