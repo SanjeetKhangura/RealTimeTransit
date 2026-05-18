@@ -2,7 +2,7 @@
 
 INFO 4190 (S10) group project. Turns TransLink GTFS-Realtime feeds into a long-term analytical resource: historical reliability profiles, ML-driven arrival forecasts, and a web dashboard for commuters and admins.
 
-Full project specification: [docs/INFO 4190 - Final Report.pdf](docs/Project%Confirmation.pdf)
+Full project specification: [docs/Project Confirmation.pdf](docs/Project%Confirmation.pdf)
 
 ## Group 1
 
