@@ -1,8 +1,9 @@
 # Real-Time Transit System
+INFO 4190 (S10) 
 
-INFO 4190 (S10) group project. Turns TransLink GTFS-Realtime feeds into a long-term analytical resource: historical reliability profiles, ML-driven arrival forecasts, and a web dashboard for commuters and admins.
+Display scheduled, real-time, and predicted route times along with detailed alerts to commuters
 
-Full project specification: [docs/Project Confirmation.pdf](docs/Project%Confirmation.pdf)
+Project Confirmation Document: [docs/Project Confirmation.pdf](docs/Project%Confirmation.pdf)
 
 ## Group 1
 
@@ -11,20 +12,11 @@ Full project specification: [docs/Project Confirmation.pdf](docs/Project%Confirm
 - Kumardeep Singh (100369778)
 - James Sinclair (100443197)
 
-## System Pillars
+## Modules
 
-1. **Ingestion** (`backend/`) — Poll TransLink GTFS-Realtime every 30s, persist snapshots, download GTFS-Static schedule, handle failures without crashing, filter invalid data.
-2. **Processing** (`backend/`) — Schedule adherence, bus bunching detection, service-gap detection, hour-of-day reliability profiles per route and segment.
-3. **ML Prediction** (`ml/`) — Train a model (LSTM or XGBoost regressor) on historical time-series data, generate forecasted arrival times, log predicted-vs-actual for accuracy tracking.
-4. **Dashboard + Admin UI** (`frontend/`) — Route List and Route Details views, responsive down to 360px, plus an admin panel for logs, manual reprocessing, and threshold tuning.
-
-## Directory Layout
-
-```
-RealTimeTransit/
-  backend/    # Ingestion worker, processing pipeline, API
-  frontend/   # Web dashboard (route list, route details, admin)
-  ml/         # Training pipelines, model artefacts, prediction service
-  docs/       # Final report and any future design docs
-```
-
+| Module | Location | Purpose |
+|-|-|-|
+| Ingest Worker | `ingest` | Poll GTFS-Realtime feed, storing current state to the database |
+| API Server | `api` | Interface between the database, predictions, ingest worker, and dashboard |
+| Dashboard UI | `frontend` | Display route data, insights, and predictions to users |
+| Machine Learning | `ml` | Predict future arrival times based on historical data (stretch goal) |
