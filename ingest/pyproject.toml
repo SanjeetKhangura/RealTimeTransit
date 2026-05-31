@@ -6,4 +6,8 @@ name = "realtimetransit_ingest"
 version = "0.0.0a0"
 dependencies = [
   "httpx",
+  "hatch",
+  "requests",
+  "timescaledb",
+  "gtfs-realtime-bindings",
 ]
