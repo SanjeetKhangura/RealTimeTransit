@@ -10,12 +10,46 @@ if __name__ == "__main__":
     
     # parse args
     parser = argparse.ArgumentParser(description='Ingest GTFS data')
+
+    # parser.add_argument(
+    #     '--url', '-u',
+    #     type=str,
+    #     default=os.getenv('FEED_URL', 'https://gtfsapi.translink.ca/v3/gtfsposition'),
+    #     help='url of the feed to ingest'
+    # )
     parser.add_argument(
-        '--url', '-u',
+        '--gtfs_base_url', '-u',
         type=str,
-        default=os.getenv('FEED_URL', 'https://gtfsapi.translink.ca/v3/gtfsposition'),
-        help='url of the feed to ingest'
+        default=os.getenv('GTFS_BASE_URL', 'https://gtfsapi.translink.ca/v3/'),
+        help='base url of the gtfs feed (including trailing slash)'
     )
+    parser.add_argument(
+        '--gtfs_endpoint_trip_updates', '-u',
+        type=str,
+        default=os.getenv('GTFS_ENDPOINT_TRIP_UPDATES', 'gtfsposition'),
+        help='endpoint for trip updates feed (appended to base url)'
+    )
+    parser.add_argument(
+        '--gtfs_endpoint_vehicle_positions', '-v',
+        type=str,
+        default=os.getenv('GTFS_ENDPOINT_VEHICLE_POSITIONS', 'gtfsposition'),
+        help='endpoint for vehicle positions feed (appended to base url)'
+    )
+    parser.add_argument(
+        '--gtfs_endpoint_service_alerts', '-s',
+        type=str,
+        default=os.getenv('GTFS_ENDPOINT_SERVICE_ALERTS', 'gtfsalerts'),
+        help='endpoint for service alerts feed (appended to base url)'
+    )
+
+    parser.add_argument(
+        '--validation_options', '-V',
+        type=str,
+        default=os.getenv('VALIDATION_OPTIONS'),
+        help='json of validator config optoins'
+    )
+
+
     parser.add_argument(
         '--api_key', '-k',
         type=str,
