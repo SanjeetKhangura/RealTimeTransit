@@ -8,6 +8,6 @@ dependencies = [
   "httpx",
   "hatch",
   "requests",
-  "timescaledb",
+  "psycopg",
   "gtfs-realtime-bindings",
 ]
