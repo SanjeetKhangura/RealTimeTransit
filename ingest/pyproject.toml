@@ -9,5 +9,6 @@ dependencies = [
   "hatch",
   "requests",
   "psycopg",
+  "psycopg_binary",
   "gtfs-realtime-bindings",
 ]
