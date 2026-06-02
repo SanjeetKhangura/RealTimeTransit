@@ -48,6 +48,12 @@ if __name__ == "__main__":
         default=os.getenv('VALIDATION_OPTIONS'),
         help='json of validator config optoins'
     )
+    parser.add_argument(
+        '--static_schedule_url', '-S',
+        type=str,
+        default=os.getenv('STATIC_SCHEDULE_URL', "https://gtfs-static.translink.ca/gtfs/google_transit.zip"),
+        help='url of the static schedule feed to compare against, if schedule validation is enabled'
+    )
 
 
     parser.add_argument(
