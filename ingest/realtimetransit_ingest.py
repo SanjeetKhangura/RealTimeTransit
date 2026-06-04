@@ -162,9 +162,8 @@ def fetch_and_parse_feeds(feed_urls, api_key, timeout):
             )
             response.raise_for_status()
             
-            lazybadvar = len(feed.entity) #bad bad
-            feed.ParseFromString(response.content)
-            logging.info("Successfully fetched {} feed with {} entities".format(feed_name, len(feed.entity)-lazybadvar))
+            len_bytes = feed.MergeFromString(response.content)
+            logging.info("Successfully fetched {} feed ({} bytes)".format(feed_name, len_bytes))
             
         except requests.exceptions.RequestException as e:
             logging.error("Error fetching {} feed: {}".format(feed_name, e))
@@ -193,9 +192,9 @@ def store_feed_data(feed, db_connection_string):
 def main():
     
     # Initialization and setup
+    parser, args = parse_arguments()
     setup_logging(args)
     logging.info("Ingest started at {}".format(datetime.now()))
-    parser, args = parse_arguments()
     logging.debug("Parsed arguments: {}".format(args))
     db_connection_string = generate_db_connection_string(args)
     logging.debug("Database connection string: {}".format(db_connection_string))
@@ -203,7 +202,7 @@ def main():
     # Configure and fetch feeds
     if args.static_schedule_url:
         update_static_schedule(args.static_schedule_url, args.timeout)
-    feed_urls = build_feed_urls(args, parser)
+    feed_urls = collect_feed_urls(args, parser)
     logging.debug("Feed URLs: {}".format(feed_urls))
     
     feed = fetch_and_parse_feeds(feed_urls, args.api_key, args.timeout)
