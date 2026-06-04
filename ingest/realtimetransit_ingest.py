@@ -15,28 +15,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Ingest GTFS data')
 
     parser.add_argument(
-        '--gtfs_base_url', '-u',
-        type=str,
-        default=os.getenv('GTFS_BASE_URL', 'https://gtfsapi.translink.ca/v3/'),
-        help='base url of the gtfs feed (including trailing slash)'
-    )
-    parser.add_argument(
-        '--gtfs_endpoint_trip_updates', '-T',
-        type=str,
-        default=os.getenv('GTFS_ENDPOINT_TRIP_UPDATES', 'gtfsrealtime'),
-        help='endpoint for trip updates feed (appended to base url)'
-    )
-    parser.add_argument(
-        '--gtfs_endpoint_vehicle_positions', '-V',
-        type=str,
-        default=os.getenv('GTFS_ENDPOINT_VEHICLE_POSITIONS', 'gtfsposition'),
-        help='endpoint for vehicle positions feed (appended to base url)'
-    )
-    parser.add_argument(
-        '--gtfs_endpoint_service_alerts', '-A',
-        type=str,
-        default=os.getenv('GTFS_ENDPOINT_SERVICE_ALERTS', 'gtfsalerts'),
-        help='endpoint for service alerts feed (appended to base url)'
+        '--url', '-u',
+        action='append',
+        help='feed urls (endpoint=url); specify multiple times, for each endpoint'
     )
 
     parser.add_argument(
@@ -96,7 +77,6 @@ if __name__ == "__main__":
         help='database password'
     )
 
-    
     parser.add_argument(
         '--log_level', '-l',
         type=str,
@@ -145,14 +125,24 @@ if __name__ == "__main__":
         )
     logging.debug("Database connection string: {}".format(db_connection_string))
 
-    # set up feed urls if set
-    feed_urls = {}
-    if args.gtfs_endpoint_trip_updates:
-        feed_urls['trip_updates'] = args.gtfs_base_url + args.gtfs_endpoint_trip_updates
-    if args.gtfs_endpoint_vehicle_positions:
-        feed_urls['vehicle_positions'] = args.gtfs_base_url + args.gtfs_endpoint_vehicle_positions
-    if args.gtfs_endpoint_service_alerts:
-        feed_urls['service_alerts'] = args.gtfs_base_url + args.gtfs_endpoint_service_alerts
+    # start with defaults
+    base_url = os.getenv('GTFS_BASE_URL', 'https://gtfsapi.translink.ca/v3/')
+    feed_urls = {
+        'trip_updates': base_url + os.getenv('GTFS_ENDPOINT_TRIP_UPDATES', 'gtfsrealtime'),
+        'vehicle_positions': base_url + os.getenv('GTFS_ENDPOINT_VEHICLE_POSITIONS', 'gtfsposition'),
+        'service_alerts': base_url + os.getenv('GTFS_ENDPOINT_SERVICE_ALERTS', 'gtfsalerts'),
+    }
+
+    # set defined if supplied
+    if args.url:
+        for url_pair in args.url:
+            if '=' in url_pair:
+                # split on first only
+                key, value = url_pair.split('=', 1)
+                feed_urls[key.strip()] = value.strip()
+            else:
+                parser.error("Invalid URL format: '{}'. Expected key=value configuration.".format(url_pair))
+
     logging.debug("Feed URLs: {}".format(feed_urls))
     query_params = {'apikey': args.api_key} if args.api_key else {} # python syntax is stupid (why does "if" come after???)
     
@@ -183,5 +173,3 @@ if __name__ == "__main__":
     logging.debug("Feed content: {}".format(repr(feed)))
 
     # todo: copy data into timescaledb
-
-    #with psycopg.connect(db_connection_string) as conn:
