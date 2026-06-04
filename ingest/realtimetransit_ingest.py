@@ -14,12 +14,6 @@ if __name__ == "__main__":
     # parse args
     parser = argparse.ArgumentParser(description='Ingest GTFS data')
 
-    # parser.add_argument(
-    #     '--url', '-u',
-    #     type=str,
-    #     default=os.getenv('FEED_URL', 'https://gtfsapi.translink.ca/v3/gtfsposition'),
-    #     help='url of the feed to ingest'
-    # )
     parser.add_argument(
         '--gtfs_base_url', '-u',
         type=str,
@@ -55,7 +49,7 @@ if __name__ == "__main__":
         '--static_schedule_url', '-S',
         type=str,
         default=os.getenv('STATIC_SCHEDULE_URL', "https://gtfs-static.translink.ca/gtfs/google_transit.zip"),
-        help='url of the static schedule feed to compare against, if schedule validation is enabled'
+        help='url of the static schedule feed (future: compare version against db and update)'
     )
 
 
