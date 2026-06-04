@@ -8,10 +8,8 @@ import psycopg
 from datetime import datetime
 from google.transit import gtfs_realtime_pb2
 
-if __name__ == "__main__":
-    print("ingest start {}".format(datetime.now()))
-    
-    # parse args
+def parse_arguments():
+    """Parses command line arguments and returns the parser and args"""
     parser = argparse.ArgumentParser(description='Ingest GTFS data')
 
     parser.add_argument(
@@ -100,9 +98,11 @@ if __name__ == "__main__":
         default=int(os.getenv('TIMEOUT', '10')),
         help='timeout for requests to the feed (in seconds)'
     )
-    args = parser.parse_args()
 
-    # set up logging
+    return parser, parser.parse_args()
+
+def setup_logging(args):
+    """Sets up logging"""
     logging.basicConfig(
         level=(logging.DEBUG if args.verbose else getattr(logging, args.log_level.upper(), logging.INFO)),
         handlers=[
@@ -110,30 +110,32 @@ if __name__ == "__main__":
             logging.StreamHandler()
         ]
     )
-    logging.debug("Parsed arguments: {}".format(args))
 
-    # figure out up postgres connection string
+def generate_db_connection_string(args):
+    """Assembles the database connection string from arguments"""
     if args.db:
-        db_connection_string = args.db
-    else:
-        db_connection_string = "postgresql://{}:{}@{}:{}/{}".format(
-            args.db_user,
-            args.db_password,
-            args.db_host,
-            args.db_port,
-            args.db_name
-        )
-    logging.debug("Database connection string: {}".format(db_connection_string))
+        return args.db
+    
+    return "postgresql://{}:{}@{}:{}/{}".format(
+        args.db_user,
+        args.db_password,
+        args.db_host,
+        args.db_port,
+        args.db_name
+    )
 
-    # start with defaults
+def collect_feed_urls(args, parser):
+    """Collects the feed URLs based on environment variables and arguments."""
     base_url = os.getenv('GTFS_BASE_URL', 'https://gtfsapi.translink.ca/v3/')
+    
+    # Default feed endpoints (unless overridden)
     feed_urls = {
         'trip_updates': base_url + os.getenv('GTFS_ENDPOINT_TRIP_UPDATES', 'gtfsrealtime'),
         'vehicle_positions': base_url + os.getenv('GTFS_ENDPOINT_VEHICLE_POSITIONS', 'gtfsposition'),
         'service_alerts': base_url + os.getenv('GTFS_ENDPOINT_SERVICE_ALERTS', 'gtfsalerts'),
     }
 
-    # set defined if supplied
+    # Override if urls are supplied
     if args.url:
         for url_pair in args.url:
             if '=' in url_pair:
@@ -142,9 +144,12 @@ if __name__ == "__main__":
                 feed_urls[key.strip()] = value.strip()
             else:
                 parser.error("Invalid URL format: '{}'. Expected key=value configuration.".format(url_pair))
+    
+    return feed_urls
 
-    logging.debug("Feed URLs: {}".format(feed_urls))
-    query_params = {'apikey': args.api_key} if args.api_key else {} # python syntax is stupid (why does "if" come after???)
+def fetch_and_parse_feeds(feed_urls, api_key, timeout):
+    """Fetches feeds and parses them using Google Transit"""
+    query_params = {'apikey': api_key} if api_key else {}
     
     feed = gtfs_realtime_pb2.FeedMessage()
     for feed_name, feed_url in feed_urls.items():
@@ -153,23 +158,61 @@ if __name__ == "__main__":
             response = requests.get(
                 feed_url,
                 params=query_params,
-                timeout=args.timeout
+                timeout=timeout
             )
             response.raise_for_status()
+            
             lazybadvar = len(feed.entity) #bad bad
             feed.ParseFromString(response.content)
             logging.info("Successfully fetched {} feed with {} entities".format(feed_name, len(feed.entity)-lazybadvar))
+            
         except requests.exceptions.RequestException as e:
             logging.error("Error fetching {} feed: {}".format(feed_name, e))
         except Exception as e:
             logging.error("Error parsing {} feed: {}".format(feed_name, e))
+            
+    return feed
 
-    # todo: validate data for invalid or missing fields (and compare to static schedule)
+def update_static_schedule(static_schedule_url, timeout):
+    """Fetches the static schedule and updates the database if needed (future)"""
+    logging.info("Static schedule updates not implemented ({})".format(static_schedule_url))
+    # TODO
     
-    if (args.validation_options):
-        logging.warn("not implemented ({})".format(args.validation_options))
+def validate_feed_data(feed, validation_options):
+    """Validates the feed data based on provided options (future)"""
+    logging.info("Data validation not implemented ({})".format(validation_options))
+    # TODO
     
+def store_feed_data(feed, db_connection_string):
+    """Stores the feed data into the database (future)"""
+    logging.info("Data storage not implemented ({})".format(db_connection_string))
+    # TODO
     # temp dump to console
     logging.debug("Feed content: {}".format(repr(feed)))
 
-    # todo: copy data into timescaledb
+def main():
+    
+    # Initialization and setup
+    setup_logging(args)
+    logging.info("Ingest started at {}".format(datetime.now()))
+    parser, args = parse_arguments()
+    logging.debug("Parsed arguments: {}".format(args))
+    db_connection_string = generate_db_connection_string(args)
+    logging.debug("Database connection string: {}".format(db_connection_string))
+    
+    # Configure and fetch feeds
+    if args.static_schedule_url:
+        update_static_schedule(args.static_schedule_url, args.timeout)
+    feed_urls = build_feed_urls(args, parser)
+    logging.debug("Feed URLs: {}".format(feed_urls))
+    
+    feed = fetch_and_parse_feeds(feed_urls, args.api_key, args.timeout)
+    
+    # Post-process
+    if args.validation_options:
+        validate_feed_data(feed, args.validation_options)
+        
+    store_feed_data(feed, db_connection_string)
+
+if __name__ == "__main__":
+    main()
