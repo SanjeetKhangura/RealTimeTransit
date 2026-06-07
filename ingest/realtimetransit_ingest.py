@@ -7,7 +7,6 @@ from ingest.fetch import fetch_and_parse_feeds
 from ingest.config import parse_arguments, setup_logging, generate_db_connection_string, collect_feed_urls
 from ingest.to_db import store_feed_data
 
-
 def update_static_schedule(static_schedule_url, timeout):
     """Fetches the static schedule and updates the database if needed (future)"""
     logging.info("Static schedule updates not implemented ({})".format(static_schedule_url))

@@ -23,8 +23,8 @@ def fetch_and_parse_feeds(feed_urls, api_key, timeout):
             logging.info("Successfully fetched {} feed ({} bytes)".format(feed_name, len_bytes))
 
         except requests.exceptions.RequestException as e:
-            logging.error("Error fetching {} feed: {}".format(feed_name, e))
+            logging.exception("Error fetching {} feed: {}".format(feed_name, e))
         except Exception as e:
-            logging.error("Error parsing {} feed: {}".format(feed_name, e))
+            logging.exception("Error parsing {} feed: {}".format(feed_name, e))
 
     return feed

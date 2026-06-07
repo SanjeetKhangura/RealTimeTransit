@@ -126,6 +126,6 @@ def store_feed_data(feed, db_connection_string):
             logging.info("Successfully stored feed data: {} vehicles, {} trip updates, {} alerts".format(len(vehicle_position_rows), len(trip_update_rows), len(service_alert_rows)))
 
     except psycopg.Error as e:
-        logging.error("Database error while storing feed data: {}".format(e))
+        logging.exception("Database error while storing feed data: {}".format(e))
     except Exception as e:
-        logging.error("Unexpected error while storing feed data: {}".format(e))
+        logging.exception("Unexpected error while storing feed data: {}".format(e))
