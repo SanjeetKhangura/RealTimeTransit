@@ -1,5 +1,5 @@
 # Real-Time Transit System
-INFO 4190 (S10) 
+INFO 4290 (S50) 
 
 Display scheduled, real-time, and predicted route times along with detailed alerts to commuters
 

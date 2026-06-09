@@ -361,7 +361,7 @@ Restructured to align with the prof's core/secondary/stretch tiers, and to refle
 | **M5** | Secondary | AdherenceTable + AlertBanner + ReliabilityChart | 3-5d | TODO |
 | **M6** | Stretch | Predicted-time wiring + (if time) admin UI | flex | Stretch |
 
-Total estimate (core only, M0.5 to M4): **8-13 days solo**, **~6-9 days with M2/M3 parallel**.
+Total estimate (core only, M0.5 to M4): **9-14 days solo**, **~7-11 days with M2/M3 parallel**.
 
 ---
 
@@ -533,13 +533,13 @@ The team scaffolded the project at commit `5d87d84`. Already done:
 7. ~~Route Details thin scope~~ Header + health + live map only in core (M3).
 8. ~~Saved routes storage~~ localStorage only, no user accounts (no PII, nothing to sync server-side).
 9. ~~Docker decision~~ Optional, not required for v1 (see Section 13).
-12. ~~PWA approach~~ Full PWA in M0.5 (manifest + icons + service worker).
-13. ~~Timezone display~~ Agency-fixed **America/Vancouver** via `date-fns` + `@date-fns/tz` (not viewer-local).
-14. ~~Map accessibility~~ Text-equivalent bus list in M3; the Leaflet map is `aria-hidden` and supplementary.
+10. ~~PWA approach~~ Full PWA in M0.5 (manifest + icons + service worker).
+11. ~~Timezone display~~ Agency-fixed **America/Vancouver** via `date-fns` + `@date-fns/tz` (not viewer-local).
+12. ~~Map accessibility~~ Text-equivalent bus list in M3; the Leaflet map is `aria-hidden` and supplementary.
 
 ### Coordination items (not user decisions)
-10. **OpenAPI generation** the API owner is on board with switching to **Huma**, which emits OpenAPI 3.x natively, so the frontend can generate `types/api.ts` directly. If Gin is kept instead, the API team adds `swaggo/swag` (or hand-maintains the spec). Required by M1 start; otherwise frontend hand-writes a sketch and regenerates in M4.
-11. **K8s status with prof** submitted form had K8s as primary container management; prof's feedback demoted it to stretch. `infra/k8s/` exists. The frontend deploys the same artefact whether or not the K8s stretch is undertaken, so no frontend code change is required.
+13. **OpenAPI generation.** The API owner is on board with switching to **Huma**, which emits OpenAPI 3.x natively, so the frontend can generate `types/api.ts` directly. If Gin is kept instead, the API team adds `swaggo/swag` (or hand-maintains the spec). Required by M1 start; otherwise frontend hand-writes a sketch and regenerates in M4.
+14. **K8s status with prof.** The submitted form had K8s as primary container management; prof's feedback demoted it to stretch. `infra/k8s/` exists. The frontend deploys the same artefact whether or not the K8s stretch is undertaken, so no frontend code change is required.
 
 ### Notes on repo state (not RFC decisions)
 - We removed the original `docs/INFO 4190 - Final Report.pdf` from the repo. We keep a working copy elsewhere; confirm access before M1 starts since this RFC references it as background context.
