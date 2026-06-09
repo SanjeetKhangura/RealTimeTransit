@@ -28,6 +28,8 @@ export default function RouteMap({ vehicles }: { vehicles: Vehicle[] }) {
         center={center}
         zoom={12}
         scrollWheelZoom={false}
+        zoomControl={false}
+        keyboard={false}
         className="h-full w-full"
       >
         <TileLayer

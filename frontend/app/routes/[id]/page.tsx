@@ -23,10 +23,14 @@ const RouteMap = dynamic(() => import("@/components/routes/RouteMap"), {
   ),
 });
 
+// Keying the view by id remounts it when the route changes, so polling restarts
+// and fetches the new route's data immediately instead of on the next tick.
 export default function RouteDetailsPage() {
   const params = useParams<{ id: string }>();
-  const id = params.id;
+  return <RouteDetailView key={params.id} id={params.id} />;
+}
 
+function RouteDetailView({ id }: { id: string }) {
   const detail = usePolling(
     (signal) => apiGet<RouteDetail>(`/api/routes/${id}`, signal),
     30_000,
