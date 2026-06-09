@@ -3,11 +3,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --status-clear: #16a34a;
+  --status-warning: #ca8a04;
+  --status-issue: #dc2626;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-status-clear: var(--status-clear);
+  --color-status-warning: var(--status-warning);
+  --color-status-issue: var(--status-issue);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

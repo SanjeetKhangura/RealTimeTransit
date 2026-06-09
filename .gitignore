@@ -544,3 +544,8 @@ sketch
 # https://plugins.jetbrains.com/plugin/8053-azure-toolkit-for-intellij
 
 # End of https://www.toptal.com/developers/gitignore/api/go,git,react,nextjs,python,visualstudiocode,goland,pycharm,webstorm
+
+# The Python "lib/" rule above also matches the frontend source directory.
+# Keep frontend/lib (utils, api client, hooks) tracked.
+!frontend/lib/
+!frontend/lib/**
