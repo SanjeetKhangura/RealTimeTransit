@@ -13,6 +13,7 @@ Create a `.env` file in the root of the project:
 ```env
 PORT=8080
 DATABASE_URL=postgresql://username:password@host:5432/dbname
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
 ## Run
