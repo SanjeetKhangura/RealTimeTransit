@@ -23,7 +23,7 @@ func main() {
 	db := database.Connect(cfg.DatabaseURL)
 	defer db.Close()
 
-	// Wire dependencies — repository → service → handler
+	// Wire dependencies: repository → service → handler
 	routeRepo := repository.NewRouteRepository(db.Pool)
 	routeService := service.NewRouteService(routeRepo)
 	routeHandler := handlers.NewRouteHandler(routeService)
