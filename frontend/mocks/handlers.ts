@@ -1,10 +1,18 @@
 import { http, HttpResponse } from "msw";
-import { SEED_ROUTES, liveVehicles } from "./fixtures";
+import {
+  SEED_ROUTES,
+  liveVehicles,
+  routeAlerts,
+  routeShape,
+  routeStops,
+} from "./fixtures";
 import type {
+  AlertsResponse,
   LiveResponse,
   RouteDetail,
   RouteSummary,
   RoutesResponse,
+  StopsResponse,
 } from "@/types/api";
 
 // "*/" prefix matches any origin, so the same handlers work in the browser
@@ -17,6 +25,7 @@ export const handlers = [
       longName: r.longName,
       routeType: r.routeType,
       status: r.status,
+      region: r.region,
     }));
     return HttpResponse.json<RoutesResponse>({ routes });
   }),
@@ -30,6 +39,16 @@ export const handlers = [
     });
   }),
 
+  http.get("*/api/routes/:id/stops", ({ params }) => {
+    const id = String(params.id);
+    return HttpResponse.json<StopsResponse>({ stops: routeStops(id) });
+  }),
+
+  http.get("*/api/routes/:id/alerts", ({ params }) => {
+    const id = String(params.id);
+    return HttpResponse.json<AlertsResponse>({ alerts: routeAlerts(id) });
+  }),
+
   http.get("*/api/routes/:id", ({ params }) => {
     const id = String(params.id);
     const route = SEED_ROUTES.find((r) => r.routeId === id);
@@ -40,9 +59,11 @@ export const handlers = [
       longName: route.longName,
       routeType: route.routeType,
       status: route.status,
+      region: route.region,
       healthScore: route.healthScore,
       dataSource: "realtime",
       lastUpdated: new Date().toISOString(),
+      shape: routeShape(id),
     };
     return HttpResponse.json(detail);
   }),
