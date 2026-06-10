@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	Port        string
-	DatabaseURL string
+	Port               string
+	DatabaseURL        string
+	CORSAllowedOrigins string
 }
 
 // Load reads environment variables and returns a Config.
@@ -19,8 +20,9 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:        getEnv("PORT", "8080"),
-		DatabaseURL: getEnvRequired("DATABASE_URL"),
+		Port:               getEnv("PORT", "8080"),
+		DatabaseURL:        getEnvRequired("DATABASE_URL"),
+		CORSAllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"),
 	}
 }
 
