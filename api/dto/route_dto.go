@@ -3,10 +3,10 @@ package dto
 import "realtimetransit/models"
 
 type RouteResponse struct {
-	RouteID   string `json:"route_id"`
-	ShortName string `json:"short_name"`
-	LongName  string `json:"long_name"`
-	RouteType int    `json:"route_type"`
+	RouteID   string `json:"routeId"`
+	ShortName string `json:"shortName"`
+	LongName  string `json:"longName"`
+	RouteType int    `json:"routeType"`
 }
 
 type RouteListResponse struct {
