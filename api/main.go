@@ -7,6 +7,9 @@ import (
 
 	"realtimetransit/config"
 	"realtimetransit/database"
+	"realtimetransit/handlers"
+	"realtimetransit/repository"
+	"realtimetransit/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +21,11 @@ func main() {
 	// Connect to TimescaleDB
 	db := database.Connect(cfg.DatabaseURL)
 	defer db.Close()
+
+	// Wire dependencies — repository → service → handler
+	routeRepo := repository.NewRouteRepository(db.Pool)
+	routeService := service.NewRouteService(routeRepo)
+	routeHandler := handlers.NewRouteHandler(routeService)
 
 	// Create Gin router
 	router := gin.Default()
@@ -37,10 +45,11 @@ func main() {
 		})
 	})
 
-	// API route group all public endpoints live under /api
+	// API routes
 	api := router.Group("/api")
 	{
-		_ = api // prevents unused variable error until we add routes
+		api.GET("/routes", routeHandler.GetAllRoutes)
+		api.GET("/routes/:id", routeHandler.GetRouteByID)
 	}
 
 	// Start server
