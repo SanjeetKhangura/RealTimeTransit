@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"realtimetransit/models"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -32,6 +34,9 @@ func (r *RouteRepository) GetLatestDatasetID(ctx context.Context) (int, error) {
 
 	err := r.pool.QueryRow(ctx, query).Scan(&datasetID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, fmt.Errorf("no GTFS dataset found, static schedule has not been imported yet")
+		}
 		return 0, fmt.Errorf("getting latest dataset id: %w", err)
 	}
 
@@ -57,7 +62,10 @@ func (r *RouteRepository) GetAllRoutes(ctx context.Context, datasetID int) ([]mo
 	}
 	defer rows.Close()
 
-	var routes []models.Route
+	// Initialize as empty slice not nil
+	// This ensures the JSON response returns [] not null
+	// when there are no routes in the dataset
+	routes := make([]models.Route, 0)
 
 	for rows.Next() {
 		var route models.Route
@@ -103,6 +111,9 @@ func (r *RouteRepository) GetRouteByID(ctx context.Context, datasetID int, route
 		&route.RouteType,
 	)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Route{}, fmt.Errorf("route %s not found", routeID)
+		}
 		return models.Route{}, fmt.Errorf("getting route %s: %w", routeID, err)
 	}
 
