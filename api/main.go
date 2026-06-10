@@ -8,6 +8,7 @@ import (
 	"realtimetransit/config"
 	"realtimetransit/database"
 	"realtimetransit/handlers"
+	"realtimetransit/middleware"
 	"realtimetransit/repository"
 	"realtimetransit/service"
 
@@ -29,6 +30,8 @@ func main() {
 
 	// Create Gin router
 	router := gin.Default()
+
+	router.Use(middleware.CORS(cfg.CORSAllowedOrigins))
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
