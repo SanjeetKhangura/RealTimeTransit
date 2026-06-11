@@ -1,55 +1,74 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"realtimetransit/dto"
 	"realtimetransit/service"
 
-	"github.com/gin-gonic/gin"
+	"github.com/danielgtaylor/huma/v2"
 )
 
+// RouteHandler handles route endpoints registered with Huma.
+// Receives a RouteService via dependency injection.
 type RouteHandler struct {
 	routeService *service.RouteService
 }
 
+// NewRouteHandler creates a new RouteHandler.
+// Called in main.go when wiring dependencies.
 func NewRouteHandler(routeService *service.RouteService) *RouteHandler {
 	return &RouteHandler{routeService: routeService}
 }
 
-// GetAllRoutes handles GET /api/routes
-func (h *RouteHandler) GetAllRoutes(c *gin.Context) {
-	routes, err := h.routeService.GetAllRoutes(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+// GetAllRoutesInput has no parameters.
+// Huma still requires an input struct even when empty.
+type GetAllRoutesInput struct{}
 
-	c.JSON(http.StatusOK, dto.ToRouteListResponse(routes))
+// GetAllRoutesOutput wraps the response body.
+// Huma uses the Body field to generate the OpenAPI schema.
+type GetAllRoutesOutput struct {
+	Body dto.RouteListResponse
 }
 
-// GetRouteByID handles GET /api/routes/:id
-func (h *RouteHandler) GetRouteByID(c *gin.Context) {
-	routeID := c.Param("id")
-
-	route, err := h.routeService.GetRouteByID(c.Request.Context(), routeID)
+// GetAllRoutes handles GET /api/routes
+// Returns all routes with total count.
+func (h *RouteHandler) GetAllRoutes(ctx context.Context, input *GetAllRoutesInput) (*GetAllRoutesOutput, error) {
+	routes, err := h.routeService.GetAllRoutes(ctx)
 	if err != nil {
-		// Return 404 only when the route genuinely does not exist
-		// Return 500 for any real database failure
-		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to fetch route",
-		})
-		return
+		return nil, huma.NewError(http.StatusInternalServerError, err.Error())
 	}
 
-	c.JSON(http.StatusOK, dto.ToRouteResponse(route))
+	return &GetAllRoutesOutput{
+		Body: dto.ToRouteListResponse(routes),
+	}, nil
+}
+
+// GetRouteByIDInput defines the path parameter for a single route.
+// Huma reads the `path:"id"` tag to bind /api/routes/{id}
+type GetRouteByIDInput struct {
+	RouteID string `path:"id" doc:"GTFS route ID"`
+}
+
+// GetRouteByIDOutput wraps the response body.
+type GetRouteByIDOutput struct {
+	Body dto.RouteResponse
+}
+
+// GetRouteByID handles GET /api/routes/{id}
+// Returns a single route by its route_id.
+func (h *RouteHandler) GetRouteByID(ctx context.Context, input *GetRouteByIDInput) (*GetRouteByIDOutput, error) {
+	route, err := h.routeService.GetRouteByID(ctx, input.RouteID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, huma.NewError(http.StatusNotFound, err.Error())
+		}
+		return nil, huma.NewError(http.StatusInternalServerError, "failed to fetch route")
+	}
+
+	return &GetRouteByIDOutput{
+		Body: dto.ToRouteResponse(route),
+	}, nil
 }
