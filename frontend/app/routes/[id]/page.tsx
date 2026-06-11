@@ -7,12 +7,19 @@ import { apiGet } from "@/lib/api/client";
 import { usePolling } from "@/lib/api/polling";
 import { RouteHeader } from "@/components/routes/RouteHeader";
 import { RouteMapList } from "@/components/routes/RouteMapList";
+import { AlertBanner } from "@/components/routes/AlertBanner";
+import { AdherenceTable } from "@/components/routes/AdherenceTable";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorPanel } from "@/components/ui/ErrorPanel";
 import { StaleBanner } from "@/components/ui/StaleBanner";
 import { formatRelative } from "@/lib/utils/format";
-import type { LiveResponse, RouteDetail } from "@/types/api";
+import type {
+  AlertsResponse,
+  LiveResponse,
+  RouteDetail,
+  StopsResponse,
+} from "@/types/api";
 
 const RouteMap = dynamic(() => import("@/components/routes/RouteMap"), {
   ssr: false,
@@ -39,6 +46,14 @@ function RouteDetailView({ id }: { id: string }) {
     (signal) => apiGet<LiveResponse>(`/api/routes/${id}/live`, signal),
     15_000,
   );
+  const stops = usePolling(
+    (signal) => apiGet<StopsResponse>(`/api/routes/${id}/stops`, signal),
+    30_000,
+  );
+  const alerts = usePolling(
+    (signal) => apiGet<AlertsResponse>(`/api/routes/${id}/alerts`, signal),
+    30_000,
+  );
 
   if (detail.loading) {
     return (
@@ -64,9 +79,10 @@ function RouteDetailView({ id }: { id: string }) {
   }
 
   const vehicles = live.data?.vehicles ?? [];
+  const stopList = stops.data?.stops ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Link
         href="/"
         className="text-sm text-foreground/60 hover:text-foreground"
@@ -74,10 +90,14 @@ function RouteDetailView({ id }: { id: string }) {
         &larr; All routes
       </Link>
       <RouteHeader route={detail.data} />
+
+      <AlertBanner alerts={alerts.data?.alerts ?? []} />
+
       {live.isStale && (
         <StaleBanner lastUpdated={live.lastUpdated} onRetry={live.refresh} />
       )}
-      <RouteMap vehicles={vehicles} />
+      <RouteMap vehicles={vehicles} shape={detail.data.shape} stops={stopList} />
+
       <section aria-label="Live vehicles on this route" className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Live vehicles</h2>
@@ -88,6 +108,15 @@ function RouteDetailView({ id }: { id: string }) {
           )}
         </div>
         <RouteMapList vehicles={vehicles} />
+      </section>
+
+      <section aria-label="Schedule and adherence" className="space-y-2">
+        <h2 className="text-sm font-semibold">Schedule</h2>
+        {stops.loading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (
+          <AdherenceTable stops={stopList} />
+        )}
       </section>
     </div>
   );

@@ -1,10 +1,17 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
-import type { Vehicle } from "@/types/api";
+import { useEffect, useRef } from "react";
+import {
+  CircleMarker,
+  MapContainer,
+  Polyline,
+  Popup,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
+import type { StopAdherence, Vehicle } from "@/types/api";
 
-// Marker color by vehicle status.
 const STATUS_COLOR: Record<string, string> = {
   in_transit: "#16a34a",
   stopped: "#ca8a04",
@@ -13,11 +20,48 @@ const STATUS_COLOR: Record<string, string> = {
 
 const VANCOUVER: [number, number] = [49.2606, -123.114];
 
+// The map is decorative (aria-hidden) with a text-equivalent list elsewhere.
+// Keep the zoom buttons usable by mouse but out of the keyboard tab order.
+function NonFocusableZoom() {
+  const map = useMap();
+  useEffect(() => {
+    map
+      .getContainer()
+      .querySelectorAll<HTMLElement>(".leaflet-control-zoom a")
+      .forEach((el) => el.setAttribute("tabindex", "-1"));
+  }, [map]);
+  return null;
+}
+
+// Frame the route once it loads. Done once so it doesn't fight the user panning
+// on each poll; the page remounts (by route id) when the route changes.
+function FitBounds({ shape }: { shape: [number, number][] }) {
+  const map = useMap();
+  const fitted = useRef(false);
+  useEffect(() => {
+    if (fitted.current || shape.length === 0) return;
+    map.fitBounds(shape, { padding: [24, 24] });
+    fitted.current = true;
+  }, [map, shape]);
+  return null;
+}
+
 // Default export so it can be loaded with next/dynamic({ ssr: false }).
-// Leaflet touches `window`, so it must never render on the server.
-export default function RouteMap({ vehicles }: { vehicles: Vehicle[] }) {
+export default function RouteMap({
+  vehicles,
+  shape = [],
+  stops = [],
+}: {
+  vehicles: Vehicle[];
+  shape?: [number, number][];
+  stops?: StopAdherence[];
+}) {
   const center: [number, number] =
-    vehicles.length > 0 ? [vehicles[0].lat, vehicles[0].lon] : VANCOUVER;
+    shape.length > 0
+      ? shape[Math.floor(shape.length / 2)]
+      : vehicles.length > 0
+        ? [vehicles[0].lat, vehicles[0].lon]
+        : VANCOUVER;
 
   return (
     <div
@@ -27,15 +71,37 @@ export default function RouteMap({ vehicles }: { vehicles: Vehicle[] }) {
       <MapContainer
         center={center}
         zoom={12}
-        scrollWheelZoom={false}
-        zoomControl={false}
+        scrollWheelZoom
         keyboard={false}
         className="h-full w-full"
       >
+        <NonFocusableZoom />
+        {shape.length > 1 && <FitBounds shape={shape} />}
         <TileLayer
           attribution='&copy; OpenStreetMap contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {shape.length > 1 && (
+          <Polyline
+            positions={shape}
+            pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.6 }}
+          />
+        )}
+        {stops.map((s) => (
+          <CircleMarker
+            key={s.stopId}
+            center={[s.lat, s.lon]}
+            radius={4}
+            pathOptions={{
+              color: "#64748b",
+              fillColor: "#ffffff",
+              fillOpacity: 1,
+              weight: 2,
+            }}
+          >
+            <Popup>{s.stopName}</Popup>
+          </CircleMarker>
+        ))}
         {vehicles.map((v) => (
           <CircleMarker
             key={v.vehicleId}

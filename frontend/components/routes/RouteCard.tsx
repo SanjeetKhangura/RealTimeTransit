@@ -34,7 +34,12 @@ export function RouteCard({
         <span className="inline-flex min-w-12 justify-center rounded-md bg-foreground/10 px-2 py-1 text-sm font-bold">
           {route.shortName}
         </span>
-        <span className="flex-1 text-sm">{route.longName}</span>
+        <span className="flex flex-1 flex-col">
+          <span className="text-sm">{route.longName}</span>
+          {route.region && (
+            <span className="text-xs text-foreground/40">{route.region}</span>
+          )}
+        </span>
         <span className="flex items-center gap-1 text-xs text-foreground/60">
           <StatusIcon level={route.status} />
           <span className="hidden sm:inline">{meta.label}</span>

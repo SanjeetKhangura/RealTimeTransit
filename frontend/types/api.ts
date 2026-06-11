@@ -1,9 +1,14 @@
 // Interim hand-written API types.
 // These will be replaced by `openapi-typescript` output once the Go API
-// (Huma) exposes /openapi.json over Tailscale. The shapes mirror the DB
-// schema (infra/db/schema-0.0.1.sql) so the swap is low friction.
+// exposes /openapi.json. Shapes mirror the DB schema so the swap is low
+// friction.
 
-import type { DataSource, StatusLevel, VehicleStatus } from "@/types/domain";
+import type {
+  AlertSeverity,
+  DataSource,
+  StatusLevel,
+  VehicleStatus,
+} from "@/types/domain";
 
 export interface RouteSummary {
   routeId: string;
@@ -11,6 +16,7 @@ export interface RouteSummary {
   longName: string;
   routeType: number;
   status: StatusLevel;
+  region?: string; // optional; used for sorting. API may add this later.
 }
 
 export interface RoutesResponse {
@@ -21,6 +27,7 @@ export interface RouteDetail extends RouteSummary {
   healthScore: number; // 0 to 5
   dataSource: DataSource;
   lastUpdated: string; // ISO 8601 UTC
+  shape: [number, number][]; // route polyline as [lat, lon] points
 }
 
 export interface Vehicle {
@@ -36,6 +43,33 @@ export interface Vehicle {
 
 export interface LiveResponse {
   dataSource: DataSource;
-  lastUpdated: string; // ISO 8601 UTC
+  lastUpdated: string;
   vehicles: Vehicle[];
+}
+
+export interface StopAdherence {
+  stopId: string;
+  stopName: string;
+  lat: number;
+  lon: number;
+  scheduledArrival: string | null; // ISO 8601 UTC
+  predictedArrival: string | null; // null until ML serves predictions
+  arrivalDelay: number | null; // seconds, can be absent
+}
+
+export interface StopsResponse {
+  stops: StopAdherence[];
+}
+
+export interface ServiceAlert {
+  alertId: string;
+  severity: AlertSeverity;
+  header: string;
+  description: string;
+  startTime: string; // ISO 8601 UTC
+  endTime: string | null;
+}
+
+export interface AlertsResponse {
+  alerts: ServiceAlert[];
 }
