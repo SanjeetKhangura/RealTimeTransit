@@ -50,8 +50,8 @@ func main() {
 	})
 
 	// Wrap the Gin router with Huma
-	config := huma.DefaultConfig("Real-Time Transit API", "1.0.0")
-	api := humagin.New(router, config)
+	apiConfig := huma.DefaultConfig("Real-Time Transit API", "1.0.0")
+	api := humagin.New(router, apiConfig)
 
 	// Register route endpoints with Huma
 	huma.Register(api, huma.Operation{
