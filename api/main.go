@@ -5,14 +5,16 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humagin"
+	"github.com/gin-gonic/gin"
+
 	"realtimetransit/config"
 	"realtimetransit/database"
 	"realtimetransit/handlers"
 	"realtimetransit/middleware"
 	"realtimetransit/repository"
 	"realtimetransit/service"
-
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -23,7 +25,7 @@ func main() {
 	db := database.Connect(cfg.DatabaseURL)
 	defer db.Close()
 
-	// Wire dependencies: repository → service → handler
+	// Wire dependencies: repository -> service -> handler
 	routeRepo := repository.NewRouteRepository(db.Pool)
 	routeService := service.NewRouteService(routeRepo)
 	routeHandler := handlers.NewRouteHandler(routeService)
@@ -33,7 +35,6 @@ func main() {
 
 	router.Use(middleware.CORS(cfg.CORSAllowedOrigins))
 
-	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		if err := db.HealthCheck(); err != nil {
 			c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -48,16 +49,31 @@ func main() {
 		})
 	})
 
-	// API routes
-	api := router.Group("/api")
-	{
-		api.GET("/routes", routeHandler.GetAllRoutes)
-		api.GET("/routes/:id", routeHandler.GetRouteByID)
-	}
+	// Wrap the Gin router with Huma
+	config := huma.DefaultConfig("Real-Time Transit API", "1.0.0")
+	api := humagin.New(router, config)
+
+	// Register route endpoints with Huma
+	huma.Register(api, huma.Operation{
+		OperationID: "get-all-routes",
+		Method:      http.MethodGet,
+		Path:        "/api/routes",
+		Summary:     "List all routes",
+		Tags:        []string{"routes"},
+	}, routeHandler.GetAllRoutes)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-route-by-id",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}",
+		Summary:     "Get a single route by ID",
+		Tags:        []string{"routes"},
+	}, routeHandler.GetRouteByID)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("Transit API starting on %s", addr)
+	log.Printf("OpenAPI docs available at http://localhost%s/docs", addr)
 
 	if err := router.Run(addr); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
