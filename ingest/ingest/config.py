@@ -23,7 +23,7 @@ def parse_arguments():
     parser.add_argument(
         '--static_schedule_url', '-S',
         type=str,
-        default=os.getenv('STATIC_SCHEDULE_URL', "https://gtfs-static.translink.ca/gtfs/google_transit.zip"),
+        default=os.getenv('STATIC_SCHEDULE_URL'), # "https://gtfs-static.translink.ca/gtfs/google_transit.zip"
         help='url of the static schedule feed (future: compare version against db and update)'
     )
 

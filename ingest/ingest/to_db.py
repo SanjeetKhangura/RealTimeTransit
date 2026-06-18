@@ -5,7 +5,7 @@ import psycopg
 from google.transit import gtfs_realtime_pb2
 
 
-def store_feed_data(feed, db_connection_string):
+def store_feed_data(feed, db_connection_string, schedule):
     """Stores the feed data into the database"""
     logging.info("Storing feed data to database")
     # temp dump to console
