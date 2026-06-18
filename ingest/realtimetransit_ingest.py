@@ -25,9 +25,15 @@ def main():
     logging.debug("Database connection string: {}".format(db_connection_string))
     
     # Configure and fetch feeds
-    schedule = None
+    static_schedule = None
     if args.static_schedule_url:
-        schedule = update_static_schedule(args.static_schedule_url, args.timeout)
+        logging.info("Fetching static schedule from {}".format(args.static_schedule_url))
+        try:
+            static_schedule = update_static_schedule(args.static_schedule_url, args.timeout)
+        except Exception as e:
+            logging.exception("Failed to fetch static schedule: {}".format(e))
+            # Continue with realtime data only
+    
     feed_urls = collect_feed_urls(args, parser)
     logging.debug("Feed URLs: {}".format(feed_urls))
     
@@ -35,9 +41,9 @@ def main():
     
     # Post-process
     if args.validation_options:
-        validate_feed_data(feed, args.validation_options, schedule)
+        validate_feed_data(feed, args.validation_options, static_schedule)
         
-    store_feed_data(feed, db_connection_string, schedule)
+    store_feed_data(feed, db_connection_string, static_schedule=static_schedule)
 
 if __name__ == "__main__":
     main()
