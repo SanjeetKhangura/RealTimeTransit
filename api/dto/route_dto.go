@@ -6,7 +6,7 @@ type RouteResponse struct {
 	RouteID   string `json:"routeId"`
 	ShortName string `json:"shortName"`
 	LongName  string `json:"longName"`
-	RouteType int    `json:"routeType"`
+	RouteType *int   `json:"routeType"`
 }
 
 type RouteListResponse struct {
