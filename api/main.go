@@ -30,6 +30,10 @@ func main() {
 	routeService := service.NewRouteService(routeRepo)
 	routeHandler := handlers.NewRouteHandler(routeService)
 
+	vehicleRepo := repository.NewVehicleRepository(db.Pool)
+	vehicleService := service.NewVehicleService(vehicleRepo)
+	vehicleHandler := handlers.NewVehicleHandler(vehicleService)
+
 	// Create Gin router
 	router := gin.Default()
 
@@ -69,6 +73,14 @@ func main() {
 		Summary:     "Get a single route by ID",
 		Tags:        []string{"routes"},
 	}, routeHandler.GetRouteByID)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-live-vehicles",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/live",
+		Summary:     "Get live vehicle positions for a route",
+		Tags:        []string{"vehicles"},
+	}, vehicleHandler.GetLiveVehicles)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
