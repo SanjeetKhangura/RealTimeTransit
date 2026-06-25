@@ -13,7 +13,6 @@ export function RouteCard({
   saved: boolean;
   onToggleSave: (routeId: string) => void;
 }) {
-  const meta = statusMeta(route.status);
   return (
     <Card className="flex items-center gap-3 p-3 transition hover:border-foreground/25">
       <button
@@ -40,10 +39,14 @@ export function RouteCard({
             <span className="text-xs text-foreground/40">{route.region}</span>
           )}
         </span>
-        <span className="flex items-center gap-1 text-xs text-foreground/60">
-          <StatusIcon level={route.status} />
-          <span className="hidden sm:inline">{meta.label}</span>
-        </span>
+        {route.status && (
+          <span className="flex items-center gap-1 text-xs text-foreground/60">
+            <StatusIcon level={route.status} />
+            <span className="hidden sm:inline">
+              {statusMeta(route.status).label}
+            </span>
+          </span>
+        )}
       </Link>
     </Card>
   );

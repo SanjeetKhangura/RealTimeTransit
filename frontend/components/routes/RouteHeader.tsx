@@ -1,5 +1,6 @@
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import type { RouteDetail } from "@/types/api";
+import type { DataSource } from "@/types/domain";
 
 function Stars({ score }: { score: number }) {
   const full = Math.max(0, Math.min(5, Math.round(score)));
@@ -15,7 +16,13 @@ function Stars({ score }: { score: number }) {
   );
 }
 
-export function RouteHeader({ route }: { route: RouteDetail }) {
+export function RouteHeader({
+  route,
+  dataSource,
+}: {
+  route: RouteDetail;
+  dataSource: DataSource;
+}) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
@@ -25,8 +32,8 @@ export function RouteHeader({ route }: { route: RouteDetail }) {
         <h1 className="text-xl font-semibold">{route.longName}</h1>
       </div>
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <Stars score={route.healthScore} />
-        <RealtimeStatusIndicator dataSource={route.dataSource} />
+        {route.healthScore !== undefined && <Stars score={route.healthScore} />}
+        <RealtimeStatusIndicator dataSource={dataSource} />
       </div>
     </div>
   );

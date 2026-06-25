@@ -3,8 +3,13 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { apiGet } from "@/lib/api/client";
 import { usePolling } from "@/lib/api/polling";
+import {
+  getAlerts,
+  getLiveVehicles,
+  getRoute,
+  getStops,
+} from "@/lib/api/transit";
 import { RouteHeader } from "@/components/routes/RouteHeader";
 import { RouteMapList } from "@/components/routes/RouteMapList";
 import { AlertBanner } from "@/components/routes/AlertBanner";
@@ -14,12 +19,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { ErrorPanel } from "@/components/ui/ErrorPanel";
 import { StaleBanner } from "@/components/ui/StaleBanner";
 import { formatRelative } from "@/lib/utils/format";
-import type {
-  AlertsResponse,
-  LiveResponse,
-  RouteDetail,
-  StopsResponse,
-} from "@/types/api";
+import type { DataSource } from "@/types/domain";
 
 const RouteMap = dynamic(() => import("@/components/routes/RouteMap"), {
   ssr: false,
@@ -38,22 +38,10 @@ export default function RouteDetailsPage() {
 }
 
 function RouteDetailView({ id }: { id: string }) {
-  const detail = usePolling(
-    (signal) => apiGet<RouteDetail>(`/api/routes/${id}`, signal),
-    30_000,
-  );
-  const live = usePolling(
-    (signal) => apiGet<LiveResponse>(`/api/routes/${id}/live`, signal),
-    15_000,
-  );
-  const stops = usePolling(
-    (signal) => apiGet<StopsResponse>(`/api/routes/${id}/stops`, signal),
-    30_000,
-  );
-  const alerts = usePolling(
-    (signal) => apiGet<AlertsResponse>(`/api/routes/${id}/alerts`, signal),
-    30_000,
-  );
+  const detail = usePolling((signal) => getRoute(id, signal), 30_000);
+  const live = usePolling((signal) => getLiveVehicles(id, signal), 15_000);
+  const stops = usePolling((signal) => getStops(id, signal), 30_000);
+  const alerts = usePolling((signal) => getAlerts(id, signal), 30_000);
 
   if (detail.loading) {
     return (
@@ -78,8 +66,10 @@ function RouteDetailView({ id }: { id: string }) {
     );
   }
 
-  const vehicles = live.data?.vehicles ?? [];
-  const stopList = stops.data?.stops ?? [];
+  const vehicles = live.data ?? [];
+  const stopList = stops.data ?? [];
+  // No data-source flag from the API yet, so infer it from live vehicles.
+  const dataSource: DataSource = vehicles.length > 0 ? "realtime" : "scheduled";
 
   return (
     <div className="space-y-5">
@@ -89,9 +79,9 @@ function RouteDetailView({ id }: { id: string }) {
       >
         &larr; All routes
       </Link>
-      <RouteHeader route={detail.data} />
+      <RouteHeader route={detail.data} dataSource={dataSource} />
 
-      <AlertBanner alerts={alerts.data?.alerts ?? []} />
+      <AlertBanner alerts={alerts.data ?? []} />
 
       {live.isStale && (
         <StaleBanner lastUpdated={live.lastUpdated} onRetry={live.refresh} />
