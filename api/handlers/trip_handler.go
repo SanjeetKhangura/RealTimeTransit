@@ -42,3 +42,27 @@ func (h *TripHandler) GetTripUpdates(ctx context.Context, input *GetTripUpdatesI
 		Body: dto.ToRouteTripUpdatesResponse(input.RouteID, updates),
 	}, nil
 }
+
+type GetTripsInput struct {
+	RouteID string `path:"id" doc:"GTFS route ID"`
+}
+
+type GetTripsOutput struct {
+	Body dto.RouteTripsResponse
+}
+
+// GET /api/routes/{id}/trips
+// Returns all trips for the route.
+func (h *TripHandler) GetTrips(ctx context.Context, input *GetTripsInput) (*GetTripsOutput, error) {
+	trips, err := h.tripService.GetTripsByRoute(ctx, input.RouteID)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return nil, huma.NewError(http.StatusNotFound, err.Error())
+		}
+		return nil, huma.NewError(http.StatusInternalServerError, "Failed to fetch trips: %v", err)
+	}
+
+	return &GetTripsOutput{
+		Body: dto.ToRouteTripsResponse(input.RouteID, trips),
+	}, nil
+}
