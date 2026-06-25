@@ -1,6 +1,11 @@
 import type { StatusLevel, VehicleStatus } from "@/types/domain";
 import type { ServiceAlert, StopAdherence } from "@/types/api";
-import type { LiveVehiclesWire, VehiclePositionWire } from "@/lib/api/wire";
+import type {
+  LiveVehiclesWire,
+  RouteTripUpdatesWire,
+  TripUpdateWire,
+  VehiclePositionWire,
+} from "@/lib/api/wire";
 
 export interface SeedVehicle {
   vehicleId: string;
@@ -161,13 +166,13 @@ export function routeShape(routeId: string): [number, number][] {
 }
 
 const STOP_NAMES = ["Terminal", "Central Station", "Main St", "Broadway", "University Loop"];
+const DELAY_BY_STATUS = { clear: 30, warning: 240, issue: 540 } as const;
 
 export function routeStops(routeId: string): StopAdherence[] {
   const route = findRoute(routeId);
   if (!route) return [];
   const [lat, lon] = routeBase(route);
   const now = Date.now();
-  const delayByStatus = { clear: 30, warning: 240, issue: 540 } as const;
   return STOP_NAMES.map((name, i) => ({
     stopId: `${routeId}-S${i + 1}`,
     stopName: name,
@@ -175,8 +180,29 @@ export function routeStops(routeId: string): StopAdherence[] {
     lon: lon + (i - 2) * 0.012,
     scheduledArrival: new Date(now + i * 5 * 60_000).toISOString(),
     predictedArrival: null, // ML is not serving predictions yet
-    arrivalDelay: i === 0 ? 0 : delayByStatus[route.status],
+    arrivalDelay: i === 0 ? 0 : DELAY_BY_STATUS[route.status],
   }));
+}
+
+// Mock /trip-updates in the real API wire shape, derived from the seed stops.
+export function routeTripUpdates(routeId: string): RouteTripUpdatesWire {
+  const route = findRoute(routeId);
+  if (!route) return { routeId, total: 0, tripUpdates: [] };
+  const now = Date.now();
+  const delay = DELAY_BY_STATUS[route.status];
+  const tripUpdates: TripUpdateWire[] = STOP_NAMES.map((_, i) => ({
+    ts: new Date(now).toISOString(),
+    tripId: `${routeId}-T1`,
+    routeId,
+    stopId: `${routeId}-S${i + 1}`,
+    stopSequence: i + 1,
+    arrivalDelay: i === 0 ? 0 : delay,
+    arrivalTime: new Date(now + i * 5 * 60_000).toISOString(),
+    departureDelay: null,
+    departureTime: null,
+    scheduleRelationship: "SCHEDULED",
+  }));
+  return { routeId, total: tripUpdates.length, tripUpdates };
 }
 
 export function routeAlerts(routeId: string): ServiceAlert[] {

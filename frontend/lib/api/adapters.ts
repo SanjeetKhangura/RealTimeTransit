@@ -2,9 +2,14 @@
 // means switching from mocks to the real API is just these mappings, and the
 // components never see the wire format.
 
-import type { RouteDetail, RouteSummary, Vehicle } from "@/types/api";
+import type {
+  RouteDetail,
+  RouteSummary,
+  StopAdherence,
+  Vehicle,
+} from "@/types/api";
 import type { VehicleStatus } from "@/types/domain";
-import type { LiveVehiclesWire, RouteWire } from "./wire";
+import type { LiveVehiclesWire, RouteWire, TripUpdateWire } from "./wire";
 
 export function toRouteSummary(w: RouteWire): RouteSummary {
   return {
@@ -54,4 +59,24 @@ export function toVehicles(w: LiveVehiclesWire): Vehicle[] {
     });
   }
   return out;
+}
+
+// Maps a realtime trip update to a schedule-table row. The scheduled time is
+// reconstructed from the predicted arrival minus the delay. Stop names come
+// from the stops table (static schedule) once it lands, so we fall back to the
+// id for now, and the ML predicted column stays null until ML is serving.
+export function toStopAdherence(tu: TripUpdateWire): StopAdherence {
+  let scheduledArrival: string | null = null;
+  if (tu.arrivalTime && tu.arrivalDelay !== null) {
+    scheduledArrival = new Date(
+      new Date(tu.arrivalTime).getTime() - tu.arrivalDelay * 1000,
+    ).toISOString();
+  }
+  return {
+    stopId: tu.stopId,
+    stopName: tu.stopId,
+    scheduledArrival,
+    predictedArrival: null,
+    arrivalDelay: tu.arrivalDelay,
+  };
 }

@@ -1,12 +1,23 @@
 // The frontend's view of the API. Each function fetches a wire shape and maps
 // it to a domain type, so components stay decoupled from the raw API.
 //
-// routes, route-by-id, and live are backed by the real Go API. stops and alerts
-// are not implemented server-side yet, so they are mock-only for now.
+// routes, route-by-id, live, and trip-updates are backed by the real Go API.
+// stops (for map markers) and alerts are not implemented server-side yet, so
+// they are mock-only for now.
 
 import { apiGet } from "./client";
-import { toRouteDetail, toRouteSummary, toVehicles } from "./adapters";
-import type { LiveVehiclesWire, RouteListWire, RouteWire } from "./wire";
+import {
+  toRouteDetail,
+  toRouteSummary,
+  toStopAdherence,
+  toVehicles,
+} from "./adapters";
+import type {
+  LiveVehiclesWire,
+  RouteListWire,
+  RouteTripUpdatesWire,
+  RouteWire,
+} from "./wire";
 import type {
   RouteDetail,
   RouteSummary,
@@ -34,6 +45,18 @@ export async function getLiveVehicles(
 ): Promise<Vehicle[]> {
   const wire = await apiGet<LiveVehiclesWire>(`/api/routes/${id}/live`, signal);
   return toVehicles(wire);
+}
+
+// Real schedule/adherence source: maps trip updates to schedule-table rows.
+export async function getTripUpdates(
+  id: string,
+  signal?: AbortSignal,
+): Promise<StopAdherence[]> {
+  const wire = await apiGet<RouteTripUpdatesWire>(
+    `/api/routes/${id}/trip-updates`,
+    signal,
+  );
+  return wire.tripUpdates.map(toStopAdherence);
 }
 
 // Pending backend: mock-only until the API exposes these.

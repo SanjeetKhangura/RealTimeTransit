@@ -87,21 +87,23 @@ export default function RouteMap({
             pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.6 }}
           />
         )}
-        {stops.map((s) => (
-          <CircleMarker
-            key={s.stopId}
-            center={[s.lat, s.lon]}
-            radius={4}
-            pathOptions={{
-              color: "#64748b",
-              fillColor: "#ffffff",
-              fillOpacity: 1,
-              weight: 2,
-            }}
-          >
-            <Popup>{s.stopName}</Popup>
-          </CircleMarker>
-        ))}
+        {stops.map((s) =>
+          s.lat === undefined || s.lon === undefined ? null : (
+            <CircleMarker
+              key={s.stopId}
+              center={[s.lat, s.lon]}
+              radius={4}
+              pathOptions={{
+                color: "#64748b",
+                fillColor: "#ffffff",
+                fillOpacity: 1,
+                weight: 2,
+              }}
+            >
+              <Popup>{s.stopName}</Popup>
+            </CircleMarker>
+          ),
+        )}
         {vehicles.map((v) => (
           <CircleMarker
             key={v.vehicleId}

@@ -33,8 +33,8 @@ export interface Vehicle {
 export interface StopAdherence {
   stopId: string;
   stopName: string;
-  lat: number;
-  lon: number;
+  lat?: number; // map marker coordinate; absent from /trip-updates
+  lon?: number;
   scheduledArrival: string | null;
   predictedArrival: string | null;
   arrivalDelay: number | null;

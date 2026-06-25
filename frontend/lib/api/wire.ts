@@ -43,3 +43,22 @@ export interface LiveVehiclesWire {
   vehicles: VehiclePositionWire[];
   total: number;
 }
+
+export interface TripUpdateWire {
+  ts: string;
+  tripId: string;
+  routeId: string;
+  stopId: string;
+  stopSequence: number | null;
+  arrivalDelay: number | null; // seconds
+  arrivalTime: string | null; // ISO 8601 UTC
+  departureDelay: number | null;
+  departureTime: string | null;
+  scheduleRelationship: string | null;
+}
+
+export interface RouteTripUpdatesWire {
+  routeId: string;
+  total: number;
+  tripUpdates: TripUpdateWire[];
+}

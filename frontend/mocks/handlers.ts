@@ -5,13 +5,20 @@ import {
   routeAlerts,
   routeShape,
   routeStops,
+  routeTripUpdates,
 } from "./fixtures";
-import type { LiveVehiclesWire, RouteListWire, RouteWire } from "@/lib/api/wire";
+import type {
+  LiveVehiclesWire,
+  RouteListWire,
+  RouteTripUpdatesWire,
+  RouteWire,
+} from "@/lib/api/wire";
 import type { ServiceAlert, StopAdherence } from "@/types/api";
 
-// Mocks emit the real API wire shapes. routes, route-by-id, and live match the
-// Go API; stops and alerts are mock-only (not implemented server-side yet).
-// "*/" matches any origin so the same handlers work in the browser and in Node.
+// Mocks emit the real API wire shapes. routes, route-by-id, live, and
+// trip-updates match the Go API; stops and alerts are mock-only (not
+// implemented server-side yet). "*/" matches any origin so the same handlers
+// work in the browser and in Node.
 export const handlers = [
   http.get("*/api/routes", () => {
     const routes: RouteWire[] = SEED_ROUTES.map((r) => ({
@@ -28,6 +35,11 @@ export const handlers = [
   http.get("*/api/routes/:id/live", ({ params }) => {
     const id = String(params.id);
     return HttpResponse.json<LiveVehiclesWire>(liveVehicles(id));
+  }),
+
+  http.get("*/api/routes/:id/trip-updates", ({ params }) => {
+    const id = String(params.id);
+    return HttpResponse.json<RouteTripUpdatesWire>(routeTripUpdates(id));
   }),
 
   http.get("*/api/routes/:id/stops", ({ params }) => {
