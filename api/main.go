@@ -94,6 +94,14 @@ func main() {
 		Tags:        []string{"trips"},
 	}, tripHandler.GetTripUpdates)
 
+	huma.Register(api, huma.Operation{
+		OperationID: "get-trips",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/trips",
+		Summary:     "Get trips for a route",
+		Tags:        []string{"trips"},
+	}, tripHandler.GetTrips)
+
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("Transit API starting on %s", addr)
