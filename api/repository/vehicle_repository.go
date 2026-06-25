@@ -39,9 +39,10 @@ func (r *VehicleRepository) GetLatestPositionsByRoute(ctx context.Context, route
 			congestion_level
 		FROM vehicle_positions
 		WHERE route_id = $1
-		AND ts > NOW() - INTERVAL '5 minutes'
 		ORDER BY vehicle_id, ts DESC
 	`
+
+	//AND ts > NOW() - INTERVAL '5 minutes'
 
 	rows, err := r.pool.Query(ctx, query, routeID)
 	if err != nil {
