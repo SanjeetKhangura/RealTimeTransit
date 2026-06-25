@@ -2,14 +2,18 @@
 
 import { useEffect, useState } from "react";
 
-// Starts the MSW worker in development so the app runs against mock data
-// without a backend. In production it renders children immediately and never
-// loads MSW. Swap to the real API by setting NEXT_PUBLIC_API_BASE_URL.
+// Use the mock API only in development AND when no real API base URL is set.
+// To run against the real Go API, set NEXT_PUBLIC_API_BASE_URL (e.g.
+// http://localhost:8080) and MSW stays off.
+const USE_MOCKS =
+  process.env.NODE_ENV === "development" &&
+  !process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export function MswProvider({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(process.env.NODE_ENV !== "development");
+  const [ready, setReady] = useState(!USE_MOCKS);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "development") return;
+    if (!USE_MOCKS) return;
     let active = true;
     void (async () => {
       const { worker } = await import("@/mocks/browser");

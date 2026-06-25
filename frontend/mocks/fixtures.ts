@@ -1,5 +1,6 @@
 import type { StatusLevel, VehicleStatus } from "@/types/domain";
-import type { ServiceAlert, StopAdherence, Vehicle } from "@/types/api";
+import type { ServiceAlert, StopAdherence } from "@/types/api";
+import type { LiveVehiclesWire, VehiclePositionWire } from "@/lib/api/wire";
 
 export interface SeedVehicle {
   vehicleId: string;
@@ -119,19 +120,32 @@ function jitter(base: number): number {
   return base + (Math.random() - 0.5) * 0.004;
 }
 
-export function liveVehicles(routeId: string): Vehicle[] {
+const GTFS_STATUS: Record<VehicleStatus, string> = {
+  in_transit: "IN_TRANSIT_TO",
+  stopped: "STOPPED_AT",
+  incoming: "INCOMING_AT",
+};
+
+// Returns the /live response in the real API wire shape, so the adapter runs
+// exactly as it will against the Go API.
+export function liveVehicles(routeId: string): LiveVehiclesWire {
   const route = findRoute(routeId);
-  if (!route) return [];
-  return route.vehicles.map((v) => ({
+  if (!route) return { routeId, vehicles: [], total: 0 };
+  const vehicles: VehiclePositionWire[] = route.vehicles.map((v) => ({
     vehicleId: v.vehicleId,
-    routeId: route.routeId,
+    tripId: null,
     lat: jitter(v.lat),
     lon: jitter(v.lon),
     bearing: Math.round(Math.random() * 360),
-    status: v.status,
+    speed: null,
+    currentStatus: GTFS_STATUS[v.status],
+    currentStopSequence: null,
     stopId: v.stopId,
+    congestionLevel: null,
+    lastUpdated: new Date().toISOString(),
     nextStop: v.nextStop,
   }));
+  return { routeId, vehicles, total: vehicles.length };
 }
 
 // A short polyline through the route's anchor, standing in for the GTFS shape.

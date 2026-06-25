@@ -6,20 +6,15 @@ import {
   routeShape,
   routeStops,
 } from "./fixtures";
-import type {
-  AlertsResponse,
-  LiveResponse,
-  RouteDetail,
-  RouteSummary,
-  RoutesResponse,
-  StopsResponse,
-} from "@/types/api";
+import type { LiveVehiclesWire, RouteListWire, RouteWire } from "@/lib/api/wire";
+import type { ServiceAlert, StopAdherence } from "@/types/api";
 
-// "*/" prefix matches any origin, so the same handlers work in the browser
-// (relative URLs) and in Node tests (absolute URLs).
+// Mocks emit the real API wire shapes. routes, route-by-id, and live match the
+// Go API; stops and alerts are mock-only (not implemented server-side yet).
+// "*/" matches any origin so the same handlers work in the browser and in Node.
 export const handlers = [
   http.get("*/api/routes", () => {
-    const routes: RouteSummary[] = SEED_ROUTES.map((r) => ({
+    const routes: RouteWire[] = SEED_ROUTES.map((r) => ({
       routeId: r.routeId,
       shortName: r.shortName,
       longName: r.longName,
@@ -27,33 +22,33 @@ export const handlers = [
       status: r.status,
       region: r.region,
     }));
-    return HttpResponse.json<RoutesResponse>({ routes });
+    return HttpResponse.json<RouteListWire>({ routes, total: routes.length });
   }),
 
   http.get("*/api/routes/:id/live", ({ params }) => {
     const id = String(params.id);
-    return HttpResponse.json<LiveResponse>({
-      dataSource: "realtime",
-      lastUpdated: new Date().toISOString(),
-      vehicles: liveVehicles(id),
-    });
+    return HttpResponse.json<LiveVehiclesWire>(liveVehicles(id));
   }),
 
   http.get("*/api/routes/:id/stops", ({ params }) => {
     const id = String(params.id);
-    return HttpResponse.json<StopsResponse>({ stops: routeStops(id) });
+    return HttpResponse.json<{ stops: StopAdherence[] }>({
+      stops: routeStops(id),
+    });
   }),
 
   http.get("*/api/routes/:id/alerts", ({ params }) => {
     const id = String(params.id);
-    return HttpResponse.json<AlertsResponse>({ alerts: routeAlerts(id) });
+    return HttpResponse.json<{ alerts: ServiceAlert[] }>({
+      alerts: routeAlerts(id),
+    });
   }),
 
   http.get("*/api/routes/:id", ({ params }) => {
     const id = String(params.id);
     const route = SEED_ROUTES.find((r) => r.routeId === id);
     if (!route) return new HttpResponse(null, { status: 404 });
-    const detail: RouteDetail = {
+    const detail: RouteWire = {
       routeId: route.routeId,
       shortName: route.shortName,
       longName: route.longName,
@@ -61,8 +56,6 @@ export const handlers = [
       status: route.status,
       region: route.region,
       healthScore: route.healthScore,
-      dataSource: "realtime",
-      lastUpdated: new Date().toISOString(),
       shape: routeShape(id),
     };
     return HttpResponse.json(detail);
