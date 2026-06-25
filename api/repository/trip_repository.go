@@ -71,4 +71,4 @@ func (r *TripRepository) GetTripUpdatesByRoute(ctx context.Context, routeID stri
 	}
 
 	return updates, nil
-}s
+}
