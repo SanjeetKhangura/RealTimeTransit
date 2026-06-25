@@ -72,3 +72,54 @@ func (r *TripRepository) GetTripUpdatesByRoute(ctx context.Context, routeID stri
 
 	return updates, nil
 }
+
+func (r *TripRepository) GetTripsByRoute(ctx context.Context, routeID string) ([]models.Trip, error) {
+	query := `
+		SELECT
+			dataset_id,
+			trip_id,
+			route_id,
+			service_id,
+			direction_id,
+			shape_id,
+			trip_headsign,
+			wheelchair_accessible,
+			bikes_allowed
+		FROM trips
+		WHERE route_id = $1
+		ORDER BY trip_id
+	`
+
+	rows, err := r.pool.Query(ctx, query, routeID)
+	if err != nil {
+		return nil, fmt.Errorf("Failed querying trips for route %s: %w", routeID, err)
+	}
+	defer rows.Close()
+
+	trips := make([]models.Trip, 0)
+
+	for rows.Next() {
+		var t models.Trip
+		err := rows.Scan(
+			&t.DatasetID,
+			&t.TripID,
+			&t.RouteID,
+			&t.ServiceID,
+			&t.DirectionID,
+			&t.ShapeID,
+			&t.TripHeadsign,
+			&t.WheelchairAccessible,
+			&t.BikesAllowed,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("Failed scanning trip row: %w", err)
+		}
+		trips = append(trips, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("Failed iterating trip rows: %w", err)
+	}
+
+	return trips, nil
+}
