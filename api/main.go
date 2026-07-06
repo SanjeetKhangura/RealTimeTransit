@@ -28,13 +28,13 @@ func main() {
 	// Wire dependencies: repository -> service -> handler
 	routeRepo := repository.NewRouteRepository(db.Pool)
 	vehicleRepo := repository.NewVehicleRepository(db.Pool)
-	routeService := service.NewRouteService(routeRepo, vehicleRepo)
+	tripRepo := repository.NewTripRepository(db.Pool)
+	routeService := service.NewRouteService(routeRepo, vehicleRepo, tripRepo)
 	routeHandler := handlers.NewRouteHandler(routeService)
 
 	vehicleService := service.NewVehicleService(vehicleRepo)
 	vehicleHandler := handlers.NewVehicleHandler(vehicleService)
 
-	tripRepo := repository.NewTripRepository(db.Pool)
 	tripService := service.NewTripService(tripRepo)
 	tripHandler := handlers.NewTripHandler(tripService)
 
