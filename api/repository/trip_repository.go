@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"realtimetransit/models"
 
@@ -203,4 +204,56 @@ func (r *TripRepository) GetRouteDelayMetric(ctx context.Context, routeID string
 	}
 
 	return &m, nil
+}
+
+// GetRouteHistory returns time-bucketed average arrival delay
+// for a given route between two timestamps.
+// Uses TimescaleDB time_bucket() for efficient time-series aggregation.
+// bucketInterval is a PostgreSQL interval string e.g. '1 hour', '30 minutes', '1 day'.
+func (r *TripRepository) GetRouteHistory(
+	ctx context.Context,
+	routeID string,
+	from time.Time,
+	to time.Time,
+	bucketInterval string,
+) ([]models.HistoryPoint, error) {
+	query := fmt.Sprintf(`
+		SELECT
+			time_bucket('%s', ts) AS bucket,
+			AVG(arrival_delay)    AS avg_delay_secs,
+			COUNT(*)              AS sample_size
+		FROM trip_updates
+		WHERE route_id = $1
+		AND ts BETWEEN $2 AND $3
+		AND arrival_delay IS NOT NULL
+		GROUP BY bucket
+		ORDER BY bucket ASC
+	`, bucketInterval)
+
+	rows, err := r.pool.Query(ctx, query, routeID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("querying history for route %s: %w", routeID, err)
+	}
+	defer rows.Close()
+
+	points := make([]models.HistoryPoint, 0)
+
+	for rows.Next() {
+		var p models.HistoryPoint
+		err := rows.Scan(
+			&p.Bucket,
+			&p.AvgDelaySecs,
+			&p.SampleSize,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning history point row: %w", err)
+		}
+		points = append(points, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating history point rows: %w", err)
+	}
+
+	return points, nil
 }
