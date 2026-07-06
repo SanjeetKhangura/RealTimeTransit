@@ -46,6 +46,9 @@ func main() {
 	stopService := service.NewStopService(stopRepo, routeRepo)
 	stopHandler := handlers.NewStopHandler(stopService)
 
+	historyService := service.NewHistoryService(tripRepo)
+	historyHandler := handlers.NewHistoryHandler(historyService)
+
 	// Create Gin router
 	router := gin.Default()
 
@@ -125,6 +128,14 @@ func main() {
 		Summary:     "Get stops with scheduled and real-time arrival times for a route",
 		Tags:        []string{"stops"},
 	}, stopHandler.GetStops)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-route-history",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/history",
+		Summary:     "Get historical reliability data for a route",
+		Tags:        []string{"history"},
+	}, historyHandler.GetRouteHistory)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
