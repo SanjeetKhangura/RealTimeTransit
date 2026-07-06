@@ -71,6 +71,6 @@ func (h *RouteHandler) GetRouteByID(ctx context.Context, input *GetRouteByIDInpu
 	}
 
 	return &GetRouteByIDOutput{
-		Body: dto.ToRouteResponse(detail.Route, detail.LastUpdated),
+		Body: dto.ToRouteResponse(detail),
 	}, nil
 }
