@@ -1,12 +1,18 @@
 package dto
 
-import "realtimetransit/models"
+import (
+	"realtimetransit/models"
+	"time"
+)
 
+// LastUpdated and DataSource are freshness signals per frontend contract.
 type RouteResponse struct {
-	RouteID   string `json:"routeId"`
-	ShortName string `json:"shortName"`
-	LongName  string `json:"longName"`
-	RouteType *int   `json:"routeType"`
+	RouteID     string     `json:"routeId"`
+	ShortName   string     `json:"shortName"`
+	LongName    string     `json:"longName"`
+	RouteType   *int       `json:"routeType"`
+	LastUpdated *time.Time `json:"lastUpdated"`
+	DataSource  string     `json:"dataSource"`
 }
 
 type RouteListResponse struct {
@@ -14,12 +20,19 @@ type RouteListResponse struct {
 	Total  int             `json:"total"`
 }
 
-func ToRouteResponse(r models.Route) RouteResponse {
+func ToRouteResponse(r models.Route, lastUpdated *time.Time) RouteResponse {
+	dataSource := "scheduled"
+	if lastUpdated != nil {
+		dataSource = "realtime"
+	}
+
 	return RouteResponse{
-		RouteID:   r.RouteID,
-		ShortName: r.ShortName,
-		LongName:  r.LongName,
-		RouteType: r.RouteType,
+		RouteID:     r.RouteID,
+		ShortName:   r.ShortName,
+		LongName:    r.LongName,
+		RouteType:   r.RouteType,
+		LastUpdated: toUTCPtr(lastUpdated),
+		DataSource:  dataSource,
 	}
 }
 
@@ -30,7 +43,9 @@ func ToRouteListResponse(routes []models.Route) RouteListResponse {
 	}
 
 	for i, r := range routes {
-		response.Routes[i] = ToRouteResponse(r)
+		// Route list does not include per-route freshness signal
+		// that is only on the route detail endpoint
+		response.Routes[i] = ToRouteResponse(r, nil)
 	}
 
 	return response

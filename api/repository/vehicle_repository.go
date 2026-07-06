@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"realtimetransit/models"
 
@@ -81,4 +82,26 @@ func (r *VehicleRepository) GetLatestPositionsByRoute(ctx context.Context, route
 	}
 
 	return positions, nil
+}
+
+// GetLatestUpdateTime returns the timestamp of the most recent
+// vehicle position for a given route within the last 5 minutes.
+// Used to populate the lastUpdated freshness field in API responses
+// per the frontend contract requirement.
+// Returns nil if no active vehicles exist for the route.
+func (r *VehicleRepository) GetLatestUpdateTime(ctx context.Context, routeID string) (*time.Time, error) {
+	query := `
+		SELECT MAX(ts)
+		FROM vehicle_positions
+		WHERE route_id = $1
+		AND ts > NOW() - INTERVAL '5 minutes'
+	`
+
+	var latestTs *time.Time
+	err := r.pool.QueryRow(ctx, query, routeID).Scan(&latestTs)
+	if err != nil {
+		return nil, fmt.Errorf("getting latest update time for route %s: %w", routeID, err)
+	}
+
+	return latestTs, nil
 }

@@ -30,7 +30,7 @@ type GetLiveVehiclesOutput struct {
 // GetLiveVehicles handles GET /api/routes/{id}/live
 // Returns the latest position for each active vehicle on the route.
 func (h *VehicleHandler) GetLiveVehicles(ctx context.Context, input *GetLiveVehiclesInput) (*GetLiveVehiclesOutput, error) {
-	positions, err := h.vehicleService.GetLiveVehiclesByRoute(ctx, input.RouteID)
+	data, err := h.vehicleService.GetLiveVehiclesByRoute(ctx, input.RouteID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return nil, huma.NewError(http.StatusNotFound, err.Error())
@@ -39,6 +39,6 @@ func (h *VehicleHandler) GetLiveVehicles(ctx context.Context, input *GetLiveVehi
 	}
 
 	return &GetLiveVehiclesOutput{
-		Body: dto.ToLiveVehiclesResponse(input.RouteID, positions),
+		Body: dto.ToLiveVehiclesResponse(input.RouteID, data.Positions, data.LastUpdated),
 	}, nil
 }

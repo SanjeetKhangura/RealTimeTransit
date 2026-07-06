@@ -35,6 +35,7 @@ type GetAllRoutesOutput struct {
 
 // GetAllRoutes handles GET /api/routes
 // Returns all routes with total count.
+// Frontend polls this every 60s for the route list page.
 func (h *RouteHandler) GetAllRoutes(ctx context.Context, input *GetAllRoutesInput) (*GetAllRoutesOutput, error) {
 	routes, err := h.routeService.GetAllRoutes(ctx)
 	if err != nil {
@@ -47,7 +48,7 @@ func (h *RouteHandler) GetAllRoutes(ctx context.Context, input *GetAllRoutesInpu
 }
 
 // GetRouteByIDInput defines the path parameter for a single route.
-// Huma reads the `path:"id"` tag to bind /api/routes/{id}
+// Huma reads the path tag to bind /api/routes/{id}
 type GetRouteByIDInput struct {
 	RouteID string `path:"id" doc:"GTFS route ID"`
 }
@@ -58,9 +59,10 @@ type GetRouteByIDOutput struct {
 }
 
 // GetRouteByID handles GET /api/routes/{id}
-// Returns a single route by its route_id.
+// Returns a single route by its route_id with freshness metadata.
+// Frontend polls this every 30s for the route detail page header.
 func (h *RouteHandler) GetRouteByID(ctx context.Context, input *GetRouteByIDInput) (*GetRouteByIDOutput, error) {
-	route, err := h.routeService.GetRouteByID(ctx, input.RouteID)
+	detail, err := h.routeService.GetRouteByID(ctx, input.RouteID)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return nil, huma.NewError(http.StatusNotFound, err.Error())
@@ -69,6 +71,6 @@ func (h *RouteHandler) GetRouteByID(ctx context.Context, input *GetRouteByIDInpu
 	}
 
 	return &GetRouteByIDOutput{
-		Body: dto.ToRouteResponse(route),
+		Body: dto.ToRouteResponse(detail.Route, detail.LastUpdated),
 	}, nil
 }

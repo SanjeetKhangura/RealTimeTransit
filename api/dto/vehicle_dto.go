@@ -20,10 +20,17 @@ type VehiclePositionResponse struct {
 	LastUpdated         time.Time `json:"lastUpdated"`
 }
 
+// LiveVehiclesResponse is the JSON shape returned by GET /api/routes/{id}/live
+// Wraps the vehicle list with freshness signal per frontend contract.
+// DataSource is "realtime" when live vehicle data is available,
+// "scheduled" when falling back to static schedule data.
+// LastUpdated is the timestamp of the most recent vehicle position row.
 type LiveVehiclesResponse struct {
-	RouteID  string                    `json:"routeId"`
-	Vehicles []VehiclePositionResponse `json:"vehicles"`
-	Total    int                       `json:"total"`
+	RouteID     string                    `json:"routeId"`
+	Vehicles    []VehiclePositionResponse `json:"vehicles"`
+	Total       int                       `json:"total"`
+	LastUpdated *time.Time                `json:"lastUpdated"`
+	DataSource  string                    `json:"dataSource"`
 }
 
 // ToVehiclePositionResponse converts a models.VehiclePosition
@@ -46,11 +53,19 @@ func ToVehiclePositionResponse(v models.VehiclePosition) VehiclePositionResponse
 
 // ToLiveVehiclesResponse converts a slice of models.VehiclePosition
 // to a LiveVehiclesResponse DTO.
-func ToLiveVehiclesResponse(routeID string, positions []models.VehiclePosition) LiveVehiclesResponse {
+// DataSource is "realtime" if any vehicles are present, "scheduled" if empty.
+func ToLiveVehiclesResponse(routeID string, positions []models.VehiclePosition, lastUpdated *time.Time) LiveVehiclesResponse {
+	dataSource := "scheduled"
+	if len(positions) > 0 {
+		dataSource = "realtime"
+	}
+
 	response := LiveVehiclesResponse{
-		RouteID:  routeID,
-		Vehicles: make([]VehiclePositionResponse, len(positions)),
-		Total:    len(positions),
+		RouteID:     routeID,
+		Vehicles:    make([]VehiclePositionResponse, len(positions)),
+		Total:       len(positions),
+		LastUpdated: toUTCPtr(lastUpdated),
+		DataSource:  dataSource,
 	}
 
 	for i, p := range positions {
