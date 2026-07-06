@@ -34,6 +34,10 @@ func main() {
 	vehicleService := service.NewVehicleService(vehicleRepo)
 	vehicleHandler := handlers.NewVehicleHandler(vehicleService)
 
+	tripRepo := repository.NewTripRepository(db.Pool)
+	tripService := service.NewTripService(tripRepo)
+	tripHandler := handlers.NewTripHandler(tripService)
+
 	// Create Gin router
 	router := gin.Default()
 
@@ -81,6 +85,22 @@ func main() {
 		Summary:     "Get live vehicle positions for a route",
 		Tags:        []string{"vehicles"},
 	}, vehicleHandler.GetLiveVehicles)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-trip-updates",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/trip-updates",
+		Summary:     "Get trip updates for a route",
+		Tags:        []string{"trips"},
+	}, tripHandler.GetTripUpdates)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-trips",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/trips",
+		Summary:     "Get trips for a route",
+		Tags:        []string{"trips"},
+	}, tripHandler.GetTrips)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)

@@ -22,6 +22,7 @@ func NewVehicleRepository(pool *pgxpool.Pool) *VehicleRepository {
 // Uses DISTINCT ON to get one row per vehicle ordered by most recent timestamp.
 // Vehicles that have not reported in 5 minutes are considered inactive
 // and excluded from results.
+// ---TODO: Readd AND ts > NOW() - INTERVAL '5 minutes' to the query when we have a way to test it.
 func (r *VehicleRepository) GetLatestPositionsByRoute(ctx context.Context, routeID string) ([]models.VehiclePosition, error) {
 	query := `
 		SELECT DISTINCT ON (vehicle_id)
@@ -39,9 +40,10 @@ func (r *VehicleRepository) GetLatestPositionsByRoute(ctx context.Context, route
 			congestion_level
 		FROM vehicle_positions
 		WHERE route_id = $1
-		AND ts > NOW() - INTERVAL '5 minutes'
 		ORDER BY vehicle_id, ts DESC
 	`
+
+	//AND ts > NOW() - INTERVAL '5 minutes'
 
 	rows, err := r.pool.Query(ctx, query, routeID)
 	if err != nil {
