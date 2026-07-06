@@ -49,7 +49,7 @@ func ToStopResponse(s models.StopWithTimes) StopResponse {
 		ArrivalSeconds:     s.ArrivalSeconds,
 		DepartureSeconds:   s.DepartureSeconds,
 		ArrivalDelay:       s.ArrivalDelay,
-		ArrivalTime:        s.ArrivalTime,
+		ArrivalTime:        toUTCPtr(s.ArrivalTime),
 	}
 }
 
