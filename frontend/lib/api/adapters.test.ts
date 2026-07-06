@@ -1,11 +1,18 @@
 import { describe, it, expect } from "vitest";
 import {
   toRouteSummary,
+  toServiceAlert,
   toStopAdherence,
   toVehicleStatus,
   toVehicles,
+  tripUpdateToStopAdherence,
 } from "./adapters";
-import type { LiveVehiclesWire, TripUpdateWire } from "./wire";
+import type {
+  AlertWire,
+  LiveVehiclesWire,
+  StopWire,
+  TripUpdateWire,
+} from "./wire";
 
 describe("toVehicleStatus", () => {
   it("maps GTFS statuses to the movement enum", () => {
@@ -37,7 +44,7 @@ describe("toVehicles", () => {
           currentStopSequence: null,
           stopId: "s1",
           congestionLevel: null,
-          lastUpdated: "2026-06-10T00:00:00Z",
+          lastUpdated: "2026-07-06T00:00:00Z",
         },
         {
           vehicleId: "b",
@@ -50,7 +57,7 @@ describe("toVehicles", () => {
           currentStopSequence: null,
           stopId: null,
           congestionLevel: null,
-          lastUpdated: "2026-06-10T00:00:00Z",
+          lastUpdated: "2026-07-06T00:00:00Z",
         },
       ],
     };
@@ -60,7 +67,6 @@ describe("toVehicles", () => {
       vehicleId: "a",
       routeId: "99",
       lat: 49.2,
-      lon: -123.1,
       status: "stopped",
     });
   });
@@ -91,41 +97,107 @@ describe("toRouteSummary", () => {
   });
 });
 
+const baseStop: StopWire = {
+  stopId: "99-S1",
+  stopName: "Terminal",
+  stopLat: 49.26,
+  stopLon: -123.11,
+  stopCode: null,
+  stopDesc: null,
+  wheelchairBoarding: null,
+  stopSequence: 1,
+  arrivalSeconds: null,
+  departureSeconds: null,
+  arrivalDelay: 120,
+  arrivalTime: "2026-07-06T22:07:00Z",
+};
+
 describe("toStopAdherence", () => {
-  it("reconstructs the scheduled time from arrival minus delay", () => {
-    const tu: TripUpdateWire = {
-      ts: "2026-06-25T00:00:00Z",
-      tripId: "t1",
-      routeId: "99",
-      stopId: "99-S1",
-      stopSequence: 1,
-      arrivalDelay: 120,
-      arrivalTime: "2026-06-25T22:07:00Z",
-      departureDelay: null,
-      departureTime: null,
-      scheduleRelationship: "SCHEDULED",
-    };
-    const row = toStopAdherence(tu);
-    expect(row.stopId).toBe("99-S1");
-    expect(row.stopName).toBe("99-S1"); // id until the stops table provides names
-    expect(row.predictedArrival).toBeNull();
+  it("maps names and coordinates and reconstructs the scheduled time", () => {
+    const row = toStopAdherence(baseStop);
+    expect(row.stopName).toBe("Terminal");
+    expect(row.lat).toBe(49.26);
+    expect(row.predictedArrival).toBe("2026-07-06T22:07:00Z");
+    expect(row.scheduledArrival).toBe("2026-07-06T22:05:00.000Z");
     expect(row.arrivalDelay).toBe(120);
-    expect(row.scheduledArrival).toBe("2026-06-25T22:05:00.000Z");
   });
 
-  it("leaves the scheduled time null when arrival data is missing", () => {
-    const tu: TripUpdateWire = {
-      ts: "2026-06-25T00:00:00Z",
-      tripId: "t1",
-      routeId: "99",
-      stopId: "99-S2",
-      stopSequence: 2,
+  it("falls back to the id and leaves times null when data is missing", () => {
+    const row = toStopAdherence({
+      ...baseStop,
+      stopName: null,
+      stopLat: null,
+      stopLon: null,
       arrivalDelay: null,
       arrivalTime: null,
-      departureDelay: null,
-      departureTime: null,
-      scheduleRelationship: null,
+    });
+    expect(row.stopName).toBe("99-S1");
+    expect(row.lat).toBeUndefined();
+    expect(row.scheduledArrival).toBeNull();
+    expect(row.predictedArrival).toBeNull();
+  });
+});
+
+describe("tripUpdateToStopAdherence", () => {
+  const tu: TripUpdateWire = {
+    ts: "2026-07-06T00:00:00Z",
+    tripId: "t1",
+    routeId: "99",
+    stopId: "99-S1",
+    stopSequence: 1,
+    arrivalDelay: 120,
+    arrivalTime: "2026-07-06T22:07:00Z",
+    departureDelay: null,
+    departureTime: null,
+    scheduleRelationship: "SCHEDULED",
+  };
+
+  it("reconstructs the scheduled time and keeps predicted null", () => {
+    const row = tripUpdateToStopAdherence(tu);
+    expect(row.stopName).toBe("99-S1");
+    expect(row.predictedArrival).toBeNull();
+    expect(row.scheduledArrival).toBe("2026-07-06T22:05:00.000Z");
+  });
+
+  it("leaves scheduled null when arrival data is missing", () => {
+    expect(
+      tripUpdateToStopAdherence({ ...tu, arrivalDelay: null, arrivalTime: null })
+        .scheduledArrival,
+    ).toBeNull();
+  });
+});
+
+describe("toServiceAlert", () => {
+  it("maps effect to severity and copies the text fields", () => {
+    const a: AlertWire = {
+      alertId: "a1",
+      cause: "OTHER_CAUSE",
+      effect: "SIGNIFICANT_DELAYS",
+      headerText: "Major delays",
+      descriptionText: "Big delays",
+      startTime: "2026-07-06T00:00:00Z",
+      endTime: null,
     };
-    expect(toStopAdherence(tu).scheduledArrival).toBeNull();
+    expect(toServiceAlert(a)).toMatchObject({
+      alertId: "a1",
+      severity: "critical",
+      header: "Major delays",
+      description: "Big delays",
+    });
+  });
+
+  it("defaults severity and header when fields are missing", () => {
+    const out = toServiceAlert({
+      alertId: "a2",
+      cause: null,
+      effect: null,
+      headerText: null,
+      descriptionText: null,
+      startTime: null,
+      endTime: null,
+    });
+    expect(out.severity).toBe("info");
+    expect(out.header).toBe("Service alert");
+    expect(out.description).toBe("");
   });
 });

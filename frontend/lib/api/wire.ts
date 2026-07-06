@@ -62,3 +62,40 @@ export interface RouteTripUpdatesWire {
   total: number;
   tripUpdates: TripUpdateWire[];
 }
+
+export interface StopWire {
+  stopId: string;
+  stopName: string | null;
+  stopLat: number | null;
+  stopLon: number | null;
+  stopCode: string | null;
+  stopDesc: string | null;
+  wheelchairBoarding: number | null;
+  stopSequence: number;
+  arrivalSeconds: number | null; // scheduled, seconds since midnight (agency local)
+  departureSeconds: number | null;
+  arrivalDelay: number | null; // seconds
+  arrivalTime: string | null; // realtime predicted arrival, ISO 8601 UTC
+}
+
+export interface StopListWire {
+  routeId: string;
+  stops: StopWire[];
+  total: number;
+}
+
+export interface AlertWire {
+  alertId: string;
+  cause: string | null;
+  effect: string | null; // GTFS-RT effect enum
+  headerText: string | null;
+  descriptionText: string | null;
+  startTime: string | null;
+  endTime: string | null;
+}
+
+export interface AlertListWire {
+  routeId: string;
+  alerts: AlertWire[];
+  total: number;
+}

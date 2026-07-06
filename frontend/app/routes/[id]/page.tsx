@@ -9,7 +9,6 @@ import {
   getLiveVehicles,
   getRoute,
   getStops,
-  getTripUpdates,
 } from "@/lib/api/transit";
 import { RouteHeader } from "@/components/routes/RouteHeader";
 import { RouteMapList } from "@/components/routes/RouteMapList";
@@ -41,10 +40,9 @@ export default function RouteDetailsPage() {
 function RouteDetailView({ id }: { id: string }) {
   const detail = usePolling((signal) => getRoute(id, signal), 30_000);
   const live = usePolling((signal) => getLiveVehicles(id, signal), 15_000);
-  // Map markers come from /stops (coordinates + names); the schedule table
-  // comes from /trip-updates (the real adherence source).
+  // /stops feeds both the map markers (names + coordinates) and the schedule
+  // table (scheduled + realtime times).
   const stops = usePolling((signal) => getStops(id, signal), 30_000);
-  const schedule = usePolling((signal) => getTripUpdates(id, signal), 30_000);
   const alerts = usePolling((signal) => getAlerts(id, signal), 30_000);
 
   if (detail.loading) {
@@ -71,7 +69,7 @@ function RouteDetailView({ id }: { id: string }) {
   }
 
   const vehicles = live.data ?? [];
-  const mapStops = stops.data ?? [];
+  const stopList = stops.data ?? [];
   // No data-source flag from the API yet, so infer it from live vehicles.
   const dataSource: DataSource = vehicles.length > 0 ? "realtime" : "scheduled";
 
@@ -90,7 +88,7 @@ function RouteDetailView({ id }: { id: string }) {
       {live.isStale && (
         <StaleBanner lastUpdated={live.lastUpdated} onRetry={live.refresh} />
       )}
-      <RouteMap vehicles={vehicles} shape={detail.data.shape} stops={mapStops} />
+      <RouteMap vehicles={vehicles} shape={detail.data.shape} stops={stopList} />
 
       <section aria-label="Live vehicles on this route" className="space-y-2">
         <div className="flex items-center justify-between">
@@ -106,10 +104,10 @@ function RouteDetailView({ id }: { id: string }) {
 
       <section aria-label="Schedule and adherence" className="space-y-2">
         <h2 className="text-sm font-semibold">Schedule</h2>
-        {schedule.loading ? (
+        {stops.loading ? (
           <Skeleton className="h-32 w-full" />
         ) : (
-          <AdherenceTable stops={schedule.data ?? []} />
+          <AdherenceTable stops={stopList} />
         )}
       </section>
     </div>

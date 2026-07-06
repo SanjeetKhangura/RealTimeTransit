@@ -1,8 +1,10 @@
 import type { StatusLevel, VehicleStatus } from "@/types/domain";
-import type { ServiceAlert, StopAdherence } from "@/types/api";
 import type {
+  AlertListWire,
   LiveVehiclesWire,
   RouteTripUpdatesWire,
+  StopListWire,
+  StopWire,
   TripUpdateWire,
   VehiclePositionWire,
 } from "@/lib/api/wire";
@@ -168,23 +170,31 @@ export function routeShape(routeId: string): [number, number][] {
 const STOP_NAMES = ["Terminal", "Central Station", "Main St", "Broadway", "University Loop"];
 const DELAY_BY_STATUS = { clear: 30, warning: 240, issue: 540 } as const;
 
-export function routeStops(routeId: string): StopAdherence[] {
+// Mock /stops in the real API wire shape, with names, coordinates, and times.
+export function routeStops(routeId: string): StopListWire {
   const route = findRoute(routeId);
-  if (!route) return [];
+  if (!route) return { routeId, stops: [], total: 0 };
   const [lat, lon] = routeBase(route);
   const now = Date.now();
-  return STOP_NAMES.map((name, i) => ({
+  const delay = DELAY_BY_STATUS[route.status];
+  const stops: StopWire[] = STOP_NAMES.map((name, i) => ({
     stopId: `${routeId}-S${i + 1}`,
     stopName: name,
-    lat: lat + (i - 2) * 0.004,
-    lon: lon + (i - 2) * 0.012,
-    scheduledArrival: new Date(now + i * 5 * 60_000).toISOString(),
-    predictedArrival: null, // ML is not serving predictions yet
-    arrivalDelay: i === 0 ? 0 : DELAY_BY_STATUS[route.status],
+    stopLat: lat + (i - 2) * 0.004,
+    stopLon: lon + (i - 2) * 0.012,
+    stopCode: null,
+    stopDesc: null,
+    wheelchairBoarding: null,
+    stopSequence: i + 1,
+    arrivalSeconds: null,
+    departureSeconds: null,
+    arrivalDelay: i === 0 ? 0 : delay,
+    arrivalTime: new Date(now + i * 5 * 60_000).toISOString(),
   }));
+  return { routeId, stops, total: stops.length };
 }
 
-// Mock /trip-updates in the real API wire shape, derived from the seed stops.
+// Mock /trip-updates in the real API wire shape (secondary to /stops).
 export function routeTripUpdates(routeId: string): RouteTripUpdatesWire {
   const route = findRoute(routeId);
   if (!route) return { routeId, total: 0, tripUpdates: [] };
@@ -205,30 +215,32 @@ export function routeTripUpdates(routeId: string): RouteTripUpdatesWire {
   return { routeId, total: tripUpdates.length, tripUpdates };
 }
 
-export function routeAlerts(routeId: string): ServiceAlert[] {
+// Mock /alerts in the real API wire shape (cause/effect/text).
+export function routeAlerts(routeId: string): AlertListWire {
   const route = findRoute(routeId);
-  if (!route || route.status === "clear") return [];
-  const now = Date.now();
-  if (route.status === "issue") {
-    return [
-      {
-        alertId: `${routeId}-A1`,
-        severity: "critical",
-        header: "Major delays",
-        description: `Significant delays on the ${route.shortName}. Expect waits of over 10 minutes.`,
-        startTime: new Date(now - 30 * 60_000).toISOString(),
-        endTime: null,
-      },
-    ];
+  if (!route || route.status === "clear") {
+    return { routeId, alerts: [], total: 0 };
   }
-  return [
-    {
-      alertId: `${routeId}-A1`,
-      severity: "warning",
-      header: "Bus bunching detected",
-      description: `Two ${route.shortName} buses are running close together between Central Station and Broadway.`,
-      startTime: new Date(now - 15 * 60_000).toISOString(),
-      endTime: null,
-    },
-  ];
+  const now = Date.now();
+  const alert =
+    route.status === "issue"
+      ? {
+          alertId: `${routeId}-A1`,
+          cause: "OTHER_CAUSE",
+          effect: "SIGNIFICANT_DELAYS",
+          headerText: "Major delays",
+          descriptionText: `Significant delays on the ${route.shortName}. Expect waits of over 10 minutes.`,
+          startTime: new Date(now - 30 * 60_000).toISOString(),
+          endTime: null,
+        }
+      : {
+          alertId: `${routeId}-A1`,
+          cause: "OTHER_CAUSE",
+          effect: "REDUCED_SERVICE",
+          headerText: "Bus bunching detected",
+          descriptionText: `Two ${route.shortName} buses are running close together between Central Station and Broadway.`,
+          startTime: new Date(now - 15 * 60_000).toISOString(),
+          endTime: null,
+        };
+  return { routeId, alerts: [alert], total: 1 };
 }
