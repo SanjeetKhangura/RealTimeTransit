@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"realtimetransit/models"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,7 +19,7 @@ func NewTripRepository(pool *pgxpool.Pool) *TripRepository {
 	return &TripRepository{pool: pool}
 }
 
-//returns the most recent trip update per trip for <routeID>
+// returns the most recent trip update per trip for <routeID>
 func (r *TripRepository) GetTripUpdatesByRoute(ctx context.Context, routeID string) ([]models.TripUpdate, error) {
 	query := `
 		SELECT
@@ -122,4 +124,83 @@ func (r *TripRepository) GetTripsByRoute(ctx context.Context, routeID string) ([
 	}
 
 	return trips, nil
+}
+
+// GetAllRouteDelayMetrics returns the average arrival delay and sample size
+// for every route that has trip update data in the last 30 minutes.
+// Used to compute status icons on the route list page.
+// Returns one row per route - routes with no recent data are excluded.
+// The caller treats missing routes as status "unknown".
+func (r *TripRepository) GetAllRouteDelayMetrics(ctx context.Context) ([]models.RouteDelayMetric, error) {
+	query := `
+		SELECT
+			route_id,
+			AVG(arrival_delay)  AS avg_delay,
+			COUNT(*)            AS sample_size
+		FROM trip_updates
+		WHERE ts > NOW() - INTERVAL '30 minutes'
+		AND arrival_delay IS NOT NULL
+		AND route_id IS NOT NULL
+		GROUP BY route_id
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("querying route delay metrics: %w", err)
+	}
+	defer rows.Close()
+
+	metrics := make([]models.RouteDelayMetric, 0)
+
+	for rows.Next() {
+		var m models.RouteDelayMetric
+		err := rows.Scan(
+			&m.RouteID,
+			&m.AvgDelay,
+			&m.SampleSize,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning route delay metric row: %w", err)
+		}
+		metrics = append(metrics, m)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating route delay metric rows: %w", err)
+	}
+
+	return metrics, nil
+}
+
+// GetRouteDelayMetric returns the average arrival delay for a single route
+// in the last 30 minutes.
+// Returns nil if no data exists for the route in that window.
+// Used to compute status and health score on the route detail page.
+func (r *TripRepository) GetRouteDelayMetric(ctx context.Context, routeID string) (*models.RouteDelayMetric, error) {
+	query := `
+		SELECT
+			route_id,
+			AVG(arrival_delay)  AS avg_delay,
+			COUNT(*)            AS sample_size
+		FROM trip_updates
+		WHERE route_id = $1
+		AND ts > NOW() - INTERVAL '30 minutes'
+		AND arrival_delay IS NOT NULL
+		GROUP BY route_id
+	`
+
+	var m models.RouteDelayMetric
+	err := r.pool.QueryRow(ctx, query, routeID).Scan(
+		&m.RouteID,
+		&m.AvgDelay,
+		&m.SampleSize,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("querying delay metric for route %s: %w", routeID, err)
+	}
+
+	return &m, nil
 }
