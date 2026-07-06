@@ -40,7 +40,7 @@ func ToVehiclePositionResponse(v models.VehiclePosition) VehiclePositionResponse
 		CurrentStopSequence: v.CurrentStopSequence,
 		StopID:              v.StopID,
 		CongestionLevel:     v.CongestionLevel,
-		LastUpdated:         v.Ts,
+		LastUpdated:         toUTC(v.Ts),
 	}
 }
 

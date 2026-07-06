@@ -39,8 +39,8 @@ func ToServiceAlertResponse(a models.ServiceAlert) ServiceAlertResponse {
 		Effect:          a.Effect,
 		HeaderText:      a.HeaderText,
 		DescriptionText: a.DescriptionText,
-		StartTime:       a.StartTime,
-		EndTime:         a.EndTime,
+		StartTime:       toUTCPtr(a.StartTime),
+		EndTime:         toUTCPtr(a.EndTime),
 	}
 }
 
