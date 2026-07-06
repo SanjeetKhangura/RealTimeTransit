@@ -42,6 +42,10 @@ func main() {
 	alertService := service.NewAlertService(alertRepo)
 	alertHandler := handlers.NewAlertHandler(alertService)
 
+	stopRepo := repository.NewStopRepository(db.Pool)
+	stopService := service.NewStopService(stopRepo, routeRepo)
+	stopHandler := handlers.NewStopHandler(stopService)
+
 	// Create Gin router
 	router := gin.Default()
 
@@ -113,6 +117,14 @@ func main() {
 		Summary:     "Get active service alerts for a route",
 		Tags:        []string{"alerts"},
 	}, alertHandler.GetActiveAlerts)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-stops",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/stops",
+		Summary:     "Get stops with scheduled and real-time arrival times for a route",
+		Tags:        []string{"stops"},
+	}, stopHandler.GetStops)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
