@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // Stop represents a physical bus stop from the GTFS static schedule.
 type Stop struct {
 	DatasetID          int      `db:"dataset_id"          json:"datasetId"`
@@ -16,10 +18,10 @@ type Stop struct {
 // Not a database table - assembled by the service layer from
 // stop_times and trip_updates.
 type StopWithTimes struct {
-	Stop                     // embed Stop
-	StopSequence     int     `db:"stop_sequence"    json:"stopSequence"`
-	ArrivalSeconds   *int    `db:"arrival_seconds"  json:"arrivalSeconds"`
-	DepartureSeconds *int    `db:"departure_seconds" json:"departureSeconds"`
-	ArrivalDelay     *int    `db:"arrival_delay"    json:"arrivalDelay"`
-	ArrivalTime      *string `db:"arrival_time"     json:"arrivalTime"`
+	Stop
+	StopSequence     int        `db:"stop_sequence"     json:"stopSequence"`
+	ArrivalSeconds   *int       `db:"arrival_seconds"   json:"arrivalSeconds"`
+	DepartureSeconds *int       `db:"departure_seconds" json:"departureSeconds"`
+	ArrivalDelay     *int       `db:"arrival_delay"     json:"arrivalDelay"`
+	ArrivalTime      *time.Time `db:"arrival_time"      json:"arrivalTime"`
 }
