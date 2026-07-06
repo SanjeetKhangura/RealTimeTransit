@@ -38,6 +38,10 @@ func main() {
 	tripService := service.NewTripService(tripRepo)
 	tripHandler := handlers.NewTripHandler(tripService)
 
+	alertRepo := repository.NewAlertRepository(db.Pool)
+	alertService := service.NewAlertService(alertRepo)
+	alertHandler := handlers.NewAlertHandler(alertService)
+
 	// Create Gin router
 	router := gin.Default()
 
@@ -101,6 +105,14 @@ func main() {
 		Summary:     "Get trips for a route",
 		Tags:        []string{"trips"},
 	}, tripHandler.GetTrips)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-active-alerts",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/alerts",
+		Summary:     "Get active service alerts for a route",
+		Tags:        []string{"alerts"},
+	}, alertHandler.GetActiveAlerts)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
