@@ -3,7 +3,12 @@
 // Fields the API does not provide yet are optional so the UI degrades
 // gracefully against the real backend and fills in when those land.
 
-import type { AlertSeverity, StatusLevel, VehicleStatus } from "@/types/domain";
+import type {
+  AlertSeverity,
+  DataSource,
+  StatusLevel,
+  VehicleStatus,
+} from "@/types/domain";
 
 export interface RouteSummary {
   routeId: string;
@@ -15,8 +20,10 @@ export interface RouteSummary {
 }
 
 export interface RouteDetail extends RouteSummary {
-  healthScore?: number; // 0 to 5; pending backend
-  shape?: [number, number][]; // route polyline; pending backend
+  healthScore?: number; // 0 to 5
+  shape?: [number, number][]; // pending backend (not sent by the API yet)
+  dataSource?: DataSource;
+  lastUpdated?: string; // ISO 8601 UTC
 }
 
 export interface Vehicle {

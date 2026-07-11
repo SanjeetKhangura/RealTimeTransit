@@ -70,8 +70,9 @@ function RouteDetailView({ id }: { id: string }) {
 
   const vehicles = live.data ?? [];
   const stopList = stops.data ?? [];
-  // No data-source flag from the API yet, so infer it from live vehicles.
-  const dataSource: DataSource = vehicles.length > 0 ? "realtime" : "scheduled";
+  // Use the API's freshness flag when present, else infer from live vehicles.
+  const dataSource: DataSource =
+    detail.data.dataSource ?? (vehicles.length > 0 ? "realtime" : "scheduled");
 
   return (
     <div className="space-y-5">

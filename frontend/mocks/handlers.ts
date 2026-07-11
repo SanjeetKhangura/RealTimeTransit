@@ -16,6 +16,13 @@ import type {
   StopListWire,
 } from "@/lib/api/wire";
 
+// Our seed statuses to the API's status strings, so the mock matches the API.
+const API_STATUS = {
+  clear: "on_time",
+  warning: "minor_delays",
+  issue: "disrupted",
+} as const;
+
 // Mocks emit the real API wire shapes so the adapters run the same way they
 // will against the Go API. "*/" matches any origin, so the same handlers work
 // in the browser and in Node.
@@ -26,7 +33,8 @@ export const handlers = [
       shortName: r.shortName,
       longName: r.longName,
       routeType: r.routeType,
-      status: r.status,
+      status: API_STATUS[r.status],
+      healthScore: r.healthScore,
       region: r.region,
     }));
     return HttpResponse.json<RouteListWire>({ routes, total: routes.length });
@@ -61,10 +69,12 @@ export const handlers = [
       shortName: route.shortName,
       longName: route.longName,
       routeType: route.routeType,
-      status: route.status,
-      region: route.region,
+      status: API_STATUS[route.status],
       healthScore: route.healthScore,
+      region: route.region,
       shape: routeShape(id),
+      dataSource: "realtime",
+      lastUpdated: new Date().toISOString(),
     };
     return HttpResponse.json(detail);
   }),

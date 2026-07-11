@@ -55,7 +55,15 @@ export async function getStops(
   signal?: AbortSignal,
 ): Promise<StopAdherence[]> {
   const wire = await apiGet<StopListWire>(`/api/routes/${id}/stops`, signal);
-  return wire.stops.map(toStopAdherence);
+  // /stops returns a row per trip, so keep the first row per stop.
+  const seen = new Set<string>();
+  const out: StopAdherence[] = [];
+  for (const s of wire.stops) {
+    if (seen.has(s.stopId)) continue;
+    seen.add(s.stopId);
+    out.push(toStopAdherence(s));
+  }
+  return out;
 }
 
 export async function getAlerts(

@@ -5,17 +5,17 @@
 // stay rich (status, health, shape, next stop) while the real API simply omits
 // them and the UI degrades gracefully via the adapters.
 
-import type { StatusLevel } from "@/types/domain";
-
 export interface RouteWire {
   routeId: string;
   shortName: string;
   longName: string;
   routeType: number | null;
-  status?: StatusLevel;
-  region?: string;
-  healthScore?: number;
-  shape?: [number, number][];
+  status?: string; // raw API status: on_time / minor_delays / disrupted / unknown
+  healthScore?: number; // 0.0 to 5.0 (0 when no data)
+  region?: string; // mock only, not sent by the API
+  shape?: [number, number][]; // mock only, not sent by the API
+  dataSource?: string; // realtime / scheduled (route detail only)
+  lastUpdated?: string | null; // route detail only
 }
 
 export interface RouteListWire {

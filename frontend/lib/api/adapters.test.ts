@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  toRouteDetail,
   toRouteSummary,
   toServiceAlert,
   toStopAdherence,
@@ -73,27 +74,71 @@ describe("toVehicles", () => {
 });
 
 describe("toRouteSummary", () => {
-  it("passes through optional fields when the mock provides them", () => {
+  it("maps the API status to our status level", () => {
     const s = toRouteSummary({
       routeId: "99",
       shortName: "99",
       longName: "UBC",
       routeType: 3,
-      status: "clear",
+      status: "on_time",
       region: "Vancouver",
     });
     expect(s).toMatchObject({ status: "clear", region: "Vancouver" });
   });
 
-  it("leaves optional fields undefined when the API omits them", () => {
-    const s = toRouteSummary({
-      routeId: "2",
-      shortName: "2",
-      longName: "Macdonald",
-      routeType: null,
+  it("leaves status undefined for unknown or missing status", () => {
+    expect(
+      toRouteSummary({
+        routeId: "2",
+        shortName: "2",
+        longName: "Macdonald",
+        routeType: null,
+      }).status,
+    ).toBeUndefined();
+    expect(
+      toRouteSummary({
+        routeId: "2",
+        shortName: "2",
+        longName: "Macdonald",
+        routeType: null,
+        status: "unknown",
+      }).status,
+    ).toBeUndefined();
+  });
+});
+
+describe("toRouteDetail", () => {
+  it("maps status and dataSource and hides a zero health score", () => {
+    const d = toRouteDetail({
+      routeId: "99",
+      shortName: "99",
+      longName: "UBC",
+      routeType: 3,
+      status: "disrupted",
+      healthScore: 0,
+      dataSource: "realtime",
+      lastUpdated: "2026-07-06T00:00:00Z",
     });
-    expect(s.status).toBeUndefined();
-    expect(s.routeType).toBeNull();
+    expect(d.status).toBe("issue");
+    expect(d.dataSource).toBe("realtime");
+    expect(d.healthScore).toBeUndefined();
+    expect(d.lastUpdated).toBe("2026-07-06T00:00:00Z");
+  });
+
+  it("keeps a real health score", () => {
+    const d = toRouteDetail({
+      routeId: "99",
+      shortName: "99",
+      longName: "UBC",
+      routeType: 3,
+      status: "on_time",
+      healthScore: 4.5,
+      dataSource: "scheduled",
+      lastUpdated: null,
+    });
+    expect(d.healthScore).toBe(4.5);
+    expect(d.dataSource).toBe("scheduled");
+    expect(d.lastUpdated).toBeUndefined();
   });
 });
 

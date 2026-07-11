@@ -9,7 +9,12 @@ import type {
   StopAdherence,
   Vehicle,
 } from "@/types/api";
-import type { AlertSeverity, VehicleStatus } from "@/types/domain";
+import type {
+  AlertSeverity,
+  DataSource,
+  StatusLevel,
+  VehicleStatus,
+} from "@/types/domain";
 import type {
   AlertWire,
   LiveVehiclesWire,
@@ -18,13 +23,29 @@ import type {
   TripUpdateWire,
 } from "./wire";
 
+// API status string to our status level. Unknown or absent leaves no status.
+const API_STATUS: Record<string, StatusLevel> = {
+  on_time: "clear",
+  minor_delays: "warning",
+  disrupted: "issue",
+};
+
+function statusFromApi(raw: string | undefined): StatusLevel | undefined {
+  if (raw && raw in API_STATUS) return API_STATUS[raw];
+  return undefined;
+}
+
+function dataSourceFromApi(raw: string | undefined): DataSource | undefined {
+  return raw === "realtime" || raw === "scheduled" ? raw : undefined;
+}
+
 export function toRouteSummary(w: RouteWire): RouteSummary {
   return {
     routeId: w.routeId,
     shortName: w.shortName,
     longName: w.longName,
     routeType: w.routeType,
-    status: w.status,
+    status: statusFromApi(w.status),
     region: w.region,
   };
 }
@@ -32,8 +53,11 @@ export function toRouteSummary(w: RouteWire): RouteSummary {
 export function toRouteDetail(w: RouteWire): RouteDetail {
   return {
     ...toRouteSummary(w),
-    healthScore: w.healthScore,
+    // 0 means no data yet (until ingest runs), so hide the rating.
+    healthScore: w.healthScore && w.healthScore > 0 ? w.healthScore : undefined,
     shape: w.shape,
+    dataSource: dataSourceFromApi(w.dataSource),
+    lastUpdated: w.lastUpdated ?? undefined,
   };
 }
 
