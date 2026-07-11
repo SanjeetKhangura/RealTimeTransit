@@ -3,6 +3,7 @@
 // components never see the wire format.
 
 import type {
+  ReliabilityPoint,
   RouteDetail,
   RouteSummary,
   ServiceAlert,
@@ -17,6 +18,7 @@ import type {
 } from "@/types/domain";
 import type {
   AlertWire,
+  HistoryPointWire,
   LiveVehiclesWire,
   RouteWire,
   StopWire,
@@ -155,5 +157,13 @@ export function toServiceAlert(a: AlertWire): ServiceAlert {
     description: a.descriptionText ?? "",
     startTime: a.startTime ?? "",
     endTime: a.endTime ?? null,
+  };
+}
+
+export function toReliabilityPoint(p: HistoryPointWire): ReliabilityPoint {
+  return {
+    bucket: p.bucket,
+    avgDelaySeconds: p.avgDelaySecs,
+    samples: p.sampleSize,
   };
 }

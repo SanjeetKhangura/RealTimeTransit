@@ -3,6 +3,7 @@ import {
   SEED_ROUTES,
   liveVehicles,
   routeAlerts,
+  routeHistory,
   routeShape,
   routeStops,
   routeTripUpdates,
@@ -10,6 +11,7 @@ import {
 import type {
   AlertListWire,
   LiveVehiclesWire,
+  RouteHistoryWire,
   RouteListWire,
   RouteTripUpdatesWire,
   RouteWire,
@@ -58,6 +60,11 @@ export const handlers = [
   http.get("*/api/routes/:id/alerts", ({ params }) => {
     const id = String(params.id);
     return HttpResponse.json<AlertListWire>(routeAlerts(id));
+  }),
+
+  http.get("*/api/routes/:id/history", ({ params }) => {
+    const id = String(params.id);
+    return HttpResponse.json<RouteHistoryWire>(routeHistory(id));
   }),
 
   http.get("*/api/routes/:id", ({ params }) => {

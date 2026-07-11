@@ -99,3 +99,18 @@ export interface AlertListWire {
   alerts: AlertWire[];
   total: number;
 }
+
+export interface HistoryPointWire {
+  bucket: string; // ISO 8601 UTC
+  avgDelaySecs: number; // positive late, negative early
+  sampleSize: number;
+}
+
+export interface RouteHistoryWire {
+  routeId: string;
+  from: string;
+  to: string;
+  bucket: string;
+  points: HistoryPointWire[];
+  total: number;
+}

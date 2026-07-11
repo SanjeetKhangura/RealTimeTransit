@@ -19,6 +19,11 @@ export function formatDateTime(value: string | Date): string {
   return format(new TZDate(toDate(value), AGENCY_TZ), "MMM d, h:mm a");
 }
 
+// e.g. "3PM", for compact chart axis labels
+export function formatHour(value: string | Date): string {
+  return format(new TZDate(toDate(value), AGENCY_TZ), "ha");
+}
+
 // Short "x ago" string for freshness indicators.
 export function formatRelative(value: string | Date, now: number = Date.now()): string {
   const seconds = Math.round((now - toDate(value).getTime()) / 1000);

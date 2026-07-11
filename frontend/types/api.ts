@@ -55,3 +55,9 @@ export interface ServiceAlert {
   startTime: string;
   endTime: string | null;
 }
+
+export interface ReliabilityPoint {
+  bucket: string; // ISO 8601 UTC
+  avgDelaySeconds: number; // positive late, negative early
+  samples: number;
+}

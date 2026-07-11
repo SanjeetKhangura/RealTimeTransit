@@ -4,6 +4,7 @@
 
 import { apiGet } from "./client";
 import {
+  toReliabilityPoint,
   toRouteDetail,
   toRouteSummary,
   toServiceAlert,
@@ -14,12 +15,14 @@ import {
 import type {
   AlertListWire,
   LiveVehiclesWire,
+  RouteHistoryWire,
   RouteListWire,
   RouteTripUpdatesWire,
   RouteWire,
   StopListWire,
 } from "./wire";
 import type {
+  ReliabilityPoint,
   RouteDetail,
   RouteSummary,
   ServiceAlert,
@@ -72,6 +75,18 @@ export async function getAlerts(
 ): Promise<ServiceAlert[]> {
   const wire = await apiGet<AlertListWire>(`/api/routes/${id}/alerts`, signal);
   return wire.alerts.map(toServiceAlert);
+}
+
+// Time-bucketed reliability for the chart.
+export async function getHistory(
+  id: string,
+  signal?: AbortSignal,
+): Promise<ReliabilityPoint[]> {
+  const wire = await apiGet<RouteHistoryWire>(
+    `/api/routes/${id}/history`,
+    signal,
+  );
+  return wire.points.map(toReliabilityPoint);
 }
 
 // Secondary per-trip realtime updates. Not used by the schedule table (that

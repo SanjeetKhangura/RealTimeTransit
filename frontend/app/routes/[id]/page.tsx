@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { usePolling } from "@/lib/api/polling";
 import {
   getAlerts,
+  getHistory,
   getLiveVehicles,
   getRoute,
   getStops,
@@ -14,6 +15,7 @@ import { RouteHeader } from "@/components/routes/RouteHeader";
 import { RouteMapList } from "@/components/routes/RouteMapList";
 import { AlertBanner } from "@/components/routes/AlertBanner";
 import { AdherenceTable } from "@/components/routes/AdherenceTable";
+import { ReliabilityChart } from "@/components/routes/ReliabilityChart";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorPanel } from "@/components/ui/ErrorPanel";
@@ -44,6 +46,7 @@ function RouteDetailView({ id }: { id: string }) {
   // table (scheduled + realtime times).
   const stops = usePolling((signal) => getStops(id, signal), 30_000);
   const alerts = usePolling((signal) => getAlerts(id, signal), 30_000);
+  const history = usePolling((signal) => getHistory(id, signal), 600_000);
 
   if (detail.loading) {
     return (
@@ -109,6 +112,15 @@ function RouteDetailView({ id }: { id: string }) {
           <Skeleton className="h-32 w-full" />
         ) : (
           <AdherenceTable stops={stopList} />
+        )}
+      </section>
+
+      <section aria-label="Historical reliability" className="space-y-2">
+        <h2 className="text-sm font-semibold">Reliability</h2>
+        {history.loading ? (
+          <Skeleton className="h-64 w-full" />
+        ) : (
+          <ReliabilityChart points={history.data ?? []} />
         )}
       </section>
     </div>

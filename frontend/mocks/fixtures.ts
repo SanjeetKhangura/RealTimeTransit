@@ -1,7 +1,9 @@
 import type { StatusLevel, VehicleStatus } from "@/types/domain";
 import type {
   AlertListWire,
+  HistoryPointWire,
   LiveVehiclesWire,
+  RouteHistoryWire,
   RouteTripUpdatesWire,
   StopListWire,
   StopWire,
@@ -243,4 +245,30 @@ export function routeAlerts(routeId: string): AlertListWire {
           endTime: null,
         };
   return { routeId, alerts: [alert], total: 1 };
+}
+
+// Mock /history in the real API wire shape: 24 hourly reliability buckets.
+export function routeHistory(routeId: string): RouteHistoryWire {
+  const route = findRoute(routeId);
+  const now = new Date();
+  const from = new Date(now.getTime() - 24 * 3_600_000);
+  const base = route ? DELAY_BY_STATUS[route.status] : 60;
+  const points: HistoryPointWire[] = Array.from({ length: 24 }, (_, i) => {
+    const bucket = new Date(from.getTime() + i * 3_600_000);
+    const h = bucket.getUTCHours();
+    const rush = Math.exp(-((h - 8) ** 2) / 6) + Math.exp(-((h - 17) ** 2) / 6);
+    return {
+      bucket: bucket.toISOString(),
+      avgDelaySecs: Math.round(base * 0.5 + rush * 180),
+      sampleSize: 20,
+    };
+  });
+  return {
+    routeId,
+    from: from.toISOString(),
+    to: now.toISOString(),
+    bucket: "hour",
+    points,
+    total: points.length,
+  };
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  toReliabilityPoint,
   toRouteDetail,
   toRouteSummary,
   toServiceAlert,
@@ -244,5 +245,20 @@ describe("toServiceAlert", () => {
     expect(out.severity).toBe("info");
     expect(out.header).toBe("Service alert");
     expect(out.description).toBe("");
+  });
+});
+
+describe("toReliabilityPoint", () => {
+  it("renames the wire fields to our domain shape", () => {
+    const p = toReliabilityPoint({
+      bucket: "2026-07-06T08:00:00Z",
+      avgDelaySecs: 90,
+      sampleSize: 42,
+    });
+    expect(p).toEqual({
+      bucket: "2026-07-06T08:00:00Z",
+      avgDelaySeconds: 90,
+      samples: 42,
+    });
   });
 });
