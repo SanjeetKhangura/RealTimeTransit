@@ -1,4 +1,5 @@
 import { formatTime } from "@/lib/utils/format";
+import { statusFromDelay, statusMeta } from "@/lib/utils/status";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { StopAdherence } from "@/types/api";
 
@@ -44,7 +45,15 @@ export function AdherenceTable({ stops }: { stops: StopAdherence[] }) {
               <td className="py-2 pr-3 text-foreground/60">
                 {s.predictedArrival ? formatTime(s.predictedArrival) : "N/A"}
               </td>
-              <td className="py-2">{delayLabel(s.arrivalDelay)}</td>
+              <td className="py-2">
+                {s.arrivalDelay === null ? (
+                  <span className="text-foreground/40">&mdash;</span>
+                ) : (
+                  <span className={statusMeta(statusFromDelay(s.arrivalDelay)).colorClass}>
+                    {delayLabel(s.arrivalDelay)}
+                  </span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

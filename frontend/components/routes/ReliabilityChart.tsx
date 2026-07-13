@@ -13,8 +13,20 @@ import { formatHour } from "@/lib/utils/format";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { ReliabilityPoint } from "@/types/api";
 
+// Read the accent color from the CSS token so the line matches the rest of the
+// UI. Recharts draws client-side; the fallback equals --accent in globals.css.
+function accentColor(): string {
+  if (typeof window === "undefined") return "#2563eb";
+  const v = getComputedStyle(document.documentElement)
+    .getPropertyValue("--accent")
+    .trim();
+  return v || "#2563eb";
+}
+
 // Average schedule deviation by time bucket. Recharts is client-only.
 export function ReliabilityChart({ points }: { points: ReliabilityPoint[] }) {
+  const lineColor = accentColor();
+
   if (points.length === 0) {
     return (
       <EmptyState
@@ -48,7 +60,7 @@ export function ReliabilityChart({ points }: { points: ReliabilityPoint[] }) {
           <Line
             type="monotone"
             dataKey="delay"
-            stroke="#2563eb"
+            stroke={lineColor}
             strokeWidth={2}
             dot={false}
           />

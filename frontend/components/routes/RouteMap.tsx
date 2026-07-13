@@ -12,13 +12,16 @@ import {
 } from "react-leaflet";
 import type { StopAdherence, Vehicle } from "@/types/api";
 
-const STATUS_COLOR: Record<string, string> = {
-  in_transit: "#16a34a",
-  stopped: "#ca8a04",
-  incoming: "#2563eb",
-};
-
 const VANCOUVER: [number, number] = [49.2606, -123.114];
+
+// Resolve the palette from the CSS custom properties in app/globals.css so the
+// map (drawn by Leaflet, outside Tailwind) stays in sync with the rest of the
+// UI. Fallbacks cover the brief moment before styles resolve.
+function themeColor(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
 
 // The map is decorative (aria-hidden) with a text-equivalent list elsewhere.
 // Keep the zoom buttons usable by mouse but out of the keyboard tab order.
@@ -63,6 +66,18 @@ export default function RouteMap({
         ? [vehicles[0].lat, vehicles[0].lon]
         : VANCOUVER;
 
+  const palette = {
+    clear: themeColor("--status-clear", "#16a34a"),
+    warning: themeColor("--status-warning", "#ca8a04"),
+    accent: themeColor("--accent", "#2563eb"),
+  };
+  const vehicleColor = (status: string) =>
+    status === "stopped"
+      ? palette.warning
+      : status === "incoming"
+        ? palette.accent
+        : palette.clear;
+
   return (
     <div
       aria-hidden
@@ -84,7 +99,7 @@ export default function RouteMap({
         {shape.length > 1 && (
           <Polyline
             positions={shape}
-            pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.6 }}
+            pathOptions={{ color: palette.accent, weight: 4, opacity: 0.6 }}
           />
         )}
         {stops.map((s) =>
@@ -110,7 +125,7 @@ export default function RouteMap({
             center={[v.lat, v.lon]}
             radius={8}
             pathOptions={{
-              color: STATUS_COLOR[v.status] ?? "#16a34a",
+              color: vehicleColor(v.status),
               fillOpacity: 0.8,
             }}
           >
