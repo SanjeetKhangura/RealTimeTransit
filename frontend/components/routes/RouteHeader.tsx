@@ -3,15 +3,24 @@ import type { RouteDetail } from "@/types/api";
 import type { DataSource } from "@/types/domain";
 
 function Stars({ score }: { score: number }) {
-  const full = Math.max(0, Math.min(5, Math.round(score)));
+  // Fill proportionally so a 4.5 reads as four and a half stars rather than
+  // rounding up to a full five. The amber layer is clipped over the grey one.
+  const pct = (Math.max(0, Math.min(5, score)) / 5) * 100;
   return (
     <span
+      role="img"
       aria-label={`Health rating ${score} out of 5`}
       title={`Health rating ${score} of 5`}
-      className="text-status-warning"
+      className="relative inline-block leading-none"
     >
-      {"★".repeat(full)}
-      <span className="text-foreground/20">{"★".repeat(5 - full)}</span>
+      <span className="text-foreground/20">★★★★★</span>
+      <span
+        aria-hidden
+        className="absolute inset-0 overflow-hidden text-status-warning"
+        style={{ width: `${pct}%` }}
+      >
+        ★★★★★
+      </span>
     </span>
   );
 }
