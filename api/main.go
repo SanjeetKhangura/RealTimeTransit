@@ -137,6 +137,22 @@ func main() {
 		Tags:        []string{"history"},
 	}, historyHandler.GetRouteHistory)
 
+	huma.Register(api, huma.Operation{
+		OperationID: "get-system-alerts",
+		Method:      http.MethodGet,
+		Path:        "/api/alerts/system",
+		Summary:     "Get active system wide alerts for the entire agency",
+		Tags:        []string{"alerts"},
+	}, alertHandler.GetSystemAlerts)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-all-alerts",
+		Method:      http.MethodGet,
+		Path:        "/api/alerts",
+		Summary:     "Get all active alerts across the entire network",
+		Tags:        []string{"alerts"},
+	}, alertHandler.GetAllAlerts)
+
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("Transit API starting on %s", addr)
