@@ -4,7 +4,9 @@ import type {
   HistoryPointWire,
   LiveVehiclesWire,
   RouteHistoryWire,
+  RouteShapeWire,
   RouteTripUpdatesWire,
+  ShapePointWire,
   StopListWire,
   StopWire,
   TripUpdateWire,
@@ -157,16 +159,17 @@ export function liveVehicles(routeId: string): LiveVehiclesWire {
   return { routeId, vehicles, total: vehicles.length };
 }
 
-// A short polyline through the route's anchor, standing in for the GTFS shape.
-export function routeShape(routeId: string): [number, number][] {
+// Mock /shape in the real API wire shape: a short polyline through the route's
+// anchor, standing in for the GTFS shape. Points are ordered [lat, lon].
+export function routeShape(routeId: string): RouteShapeWire {
   const route = findRoute(routeId);
-  if (!route) return [];
+  if (!route) return { routeId, shapeId: "", points: [], total: 0 };
   const [lat, lon] = routeBase(route);
-  const points: [number, number][] = [];
+  const points: ShapePointWire[] = [];
   for (let i = -3; i <= 3; i++) {
-    points.push([lat + i * 0.002, lon + i * 0.01]);
+    points.push({ lat: lat + i * 0.002, lon: lon + i * 0.01, sequence: i + 4 });
   }
-  return points;
+  return { routeId, shapeId: `${routeId}-shape`, points, total: points.length };
 }
 
 const STOP_NAMES = ["Terminal", "Central Station", "Main St", "Broadway", "University Loop"];

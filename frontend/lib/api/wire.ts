@@ -2,8 +2,8 @@
 // serializes the handler Body struct as the response body).
 //
 // Fields the real API does not send yet are marked optional. That lets the mock
-// stay rich (status, health, shape, next stop) while the real API simply omits
-// them and the UI degrades gracefully via the adapters.
+// stay rich (status, health, next stop) while the real API simply omits them
+// and the UI degrades gracefully via the adapters.
 
 export interface RouteWire {
   routeId: string;
@@ -13,9 +13,24 @@ export interface RouteWire {
   status?: string; // raw API status: on_time / minor_delays / disrupted / unknown
   healthScore?: number; // 0.0 to 5.0 (0 when no data)
   region?: string; // mock only, not sent by the API
-  shape?: [number, number][]; // mock only, not sent by the API
   dataSource?: string; // realtime / scheduled (route detail only)
   lastUpdated?: string | null; // route detail only
+}
+
+// Route shape (map polyline). Served by its own endpoint, GET
+// /api/routes/{id}/shape, not bundled in the route detail. The API returns the
+// points already ordered as [lat, lon] so Leaflet can consume them directly.
+export interface ShapePointWire {
+  lat: number;
+  lon: number;
+  sequence: number;
+}
+
+export interface RouteShapeWire {
+  routeId: string;
+  shapeId: string;
+  points: ShapePointWire[];
+  total: number;
 }
 
 export interface RouteListWire {

@@ -13,6 +13,7 @@ import type {
   LiveVehiclesWire,
   RouteHistoryWire,
   RouteListWire,
+  RouteShapeWire,
   RouteTripUpdatesWire,
   RouteWire,
   StopListWire,
@@ -67,6 +68,11 @@ export const handlers = [
     return HttpResponse.json<RouteHistoryWire>(routeHistory(id));
   }),
 
+  http.get("*/api/routes/:id/shape", ({ params }) => {
+    const id = String(params.id);
+    return HttpResponse.json<RouteShapeWire>(routeShape(id));
+  }),
+
   http.get("*/api/routes/:id", ({ params }) => {
     const id = String(params.id);
     const route = SEED_ROUTES.find((r) => r.routeId === id);
@@ -79,7 +85,6 @@ export const handlers = [
       status: API_STATUS[route.status],
       healthScore: route.healthScore,
       region: route.region,
-      shape: routeShape(id),
       dataSource: "realtime",
       lastUpdated: new Date().toISOString(),
     };

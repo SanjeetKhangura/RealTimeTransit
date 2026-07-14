@@ -20,6 +20,7 @@ import type {
   AlertWire,
   HistoryPointWire,
   LiveVehiclesWire,
+  RouteShapeWire,
   RouteWire,
   StopWire,
   TripUpdateWire,
@@ -57,10 +58,17 @@ export function toRouteDetail(w: RouteWire): RouteDetail {
     ...toRouteSummary(w),
     // 0 means no data yet (until ingest runs), so hide the rating.
     healthScore: w.healthScore && w.healthScore > 0 ? w.healthScore : undefined,
-    shape: w.shape,
     dataSource: dataSourceFromApi(w.dataSource),
     lastUpdated: w.lastUpdated ?? undefined,
   };
+}
+
+// Route polyline for the map. The API returns [lat, lon] points; sort by
+// sequence so the line is drawn in order regardless of the row order.
+export function toShape(w: RouteShapeWire): [number, number][] {
+  return [...w.points]
+    .sort((a, b) => a.sequence - b.sequence)
+    .map((p) => [p.lat, p.lon]);
 }
 
 // GTFS-RT current_status to our movement enum.

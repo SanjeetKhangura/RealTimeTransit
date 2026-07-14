@@ -9,6 +9,7 @@ import {
   getHistory,
   getLiveVehicles,
   getRoute,
+  getShape,
   getStops,
 } from "@/lib/api/transit";
 import { RouteHeader } from "@/components/routes/RouteHeader";
@@ -47,6 +48,8 @@ function RouteDetailView({ id }: { id: string }) {
   const stops = usePolling((signal) => getStops(id, signal), 30_000);
   const alerts = usePolling((signal) => getAlerts(id, signal), 30_000);
   const history = usePolling((signal) => getHistory(id, signal), 600_000);
+  // The route shape is static, so fetch it rarely (effectively once per visit).
+  const shape = usePolling((signal) => getShape(id, signal), 3_600_000);
 
   if (detail.loading) {
     return (
@@ -92,7 +95,7 @@ function RouteDetailView({ id }: { id: string }) {
       {live.isStale && (
         <StaleBanner lastUpdated={live.lastUpdated} onRetry={live.refresh} />
       )}
-      <RouteMap vehicles={vehicles} shape={detail.data.shape} stops={stopList} />
+      <RouteMap vehicles={vehicles} shape={shape.data ?? []} stops={stopList} />
 
       <section aria-label="Live vehicles on this route" className="space-y-2">
         <div className="flex items-center justify-between">

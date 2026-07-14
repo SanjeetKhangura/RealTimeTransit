@@ -2,12 +2,13 @@
 // it to a domain type, so components stay decoupled from the raw API. Every
 // function here is now backed by a real Go API endpoint.
 
-import { apiGet } from "./client";
+import { ApiError, apiGet } from "./client";
 import {
   toReliabilityPoint,
   toRouteDetail,
   toRouteSummary,
   toServiceAlert,
+  toShape,
   toStopAdherence,
   toVehicles,
   tripUpdateToStopAdherence,
@@ -17,6 +18,7 @@ import type {
   LiveVehiclesWire,
   RouteHistoryWire,
   RouteListWire,
+  RouteShapeWire,
   RouteTripUpdatesWire,
   RouteWire,
   StopListWire,
@@ -49,6 +51,21 @@ export async function getLiveVehicles(
 ): Promise<Vehicle[]> {
   const wire = await apiGet<LiveVehiclesWire>(`/api/routes/${id}/live`, signal);
   return toVehicles(wire);
+}
+
+// Route polyline for the map. A route with no shape yet returns 404, which we
+// treat as simply no line rather than an error.
+export async function getShape(
+  id: string,
+  signal?: AbortSignal,
+): Promise<[number, number][]> {
+  try {
+    const wire = await apiGet<RouteShapeWire>(`/api/routes/${id}/shape`, signal);
+    return toShape(wire);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return [];
+    throw err;
+  }
 }
 
 // Stops with names, coordinates, and scheduled + realtime times. Feeds the

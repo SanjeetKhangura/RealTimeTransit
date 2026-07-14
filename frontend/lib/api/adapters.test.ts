@@ -4,6 +4,7 @@ import {
   toRouteDetail,
   toRouteSummary,
   toServiceAlert,
+  toShape,
   toStopAdherence,
   toVehicleStatus,
   toVehicles,
@@ -245,6 +246,30 @@ describe("toServiceAlert", () => {
     expect(out.severity).toBe("info");
     expect(out.header).toBe("Service alert");
     expect(out.description).toBe("");
+  });
+});
+
+describe("toShape", () => {
+  it("orders points by sequence and maps to [lat, lon]", () => {
+    const line = toShape({
+      routeId: "99",
+      shapeId: "99-shape",
+      points: [
+        { lat: 49.2, lon: -123.1, sequence: 2 },
+        { lat: 49.1, lon: -123.0, sequence: 1 },
+      ],
+      total: 2,
+    });
+    expect(line).toEqual([
+      [49.1, -123.0],
+      [49.2, -123.1],
+    ]);
+  });
+
+  it("returns an empty line when there are no points", () => {
+    expect(
+      toShape({ routeId: "99", shapeId: "", points: [], total: 0 }),
+    ).toEqual([]);
   });
 });
 

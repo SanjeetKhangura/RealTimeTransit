@@ -21,7 +21,6 @@ export interface RouteSummary {
 
 export interface RouteDetail extends RouteSummary {
   healthScore?: number; // 0 to 5
-  shape?: [number, number][]; // pending backend (not sent by the API yet)
   dataSource?: DataSource;
   lastUpdated?: string; // ISO 8601 UTC
 }
