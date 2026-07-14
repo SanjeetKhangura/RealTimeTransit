@@ -184,6 +184,7 @@ def store_feed_data(feed, db_connection_string, static_schedule=None):
             vehicle_position_rows = []
             trip_update_rows = []
             service_alert_rows = []
+            service_alert_entity_rows = []
             
             current_time = datetime.now().astimezone() 
             # https://gtfs.org/documentation/realtime/reference/
@@ -262,8 +263,40 @@ def store_feed_data(feed, db_connection_string, static_schedule=None):
                         start_time,
                         end_time
                     ))
+                    
+                    # informed entities
+                    # because believe it or not, treating every alert as system-wide is not helpful for anyone
+                    if a.informed_entity:
+                        for informed_entity in a.informed_entity:
+                            # entity identifiers
+                            agency_id = informed_entity.agency_id or None
+                            route_id = informed_entity.route_id or None
+                            trip_id = informed_entity.trip.trip_id if informed_entity.HasField('trip') and informed_entity.trip.trip_id else None
+                            stop_id = informed_entity.stop_id or None
+                            direction_id = informed_entity.direction_id if informed_entity.HasField('direction_id') else None
+                            
+                            service_alert_entity_rows.append((
+                                current_time,
+                                entity.id,
+                                agency_id,
+                                route_id,
+                                trip_id,
+                                stop_id,
+                                direction_id
+                            ))
+                    else:
+                        # no informed entities are system-wide
+                        service_alert_entity_rows.append((
+                            current_time,
+                            entity.id,
+                            None,
+                            None,
+                            None,
+                            None,
+                            None
+                        ))
             # end of for loop
-            logging.debug("Parsed feed: vehicle_position_rows ({}), trip_update_rows ({}), service_alert_rows ({})".format(len(vehicle_position_rows), len(trip_update_rows), len(service_alert_rows)))
+            logging.debug("Parsed feed: vehicle_position_rows ({}), trip_update_rows ({}), service_alert_rows ({}), service_alert_entity_rows ({})".format(len(vehicle_position_rows), len(trip_update_rows), len(service_alert_rows), len(service_alert_entity_rows)))
             
             # Insert realtime data
             with conn.transaction():
@@ -285,8 +318,14 @@ def store_feed_data(feed, db_connection_string, static_schedule=None):
                         with cur.copy("COPY service_alerts (ts, alert_id, cause, effect, header_text, description_text, start_time, end_time) FROM STDIN") as copy:
                             for row in service_alert_rows:
                                 copy.write_row(row)
+                    
+                    if service_alert_entity_rows:
+                        logging.debug("Copying {} service alert entities".format(len(service_alert_entity_rows)))
+                        with cur.copy("COPY service_alert_entities (ts, alert_id, agency_id, route_id, trip_id, stop_id, direction_id) FROM STDIN") as copy:
+                            for row in service_alert_entity_rows:
+                                copy.write_row(row)
             
-            logging.info("Successfully stored feed data: {} vehicles, {} trip updates, {} alerts".format(len(vehicle_position_rows), len(trip_update_rows), len(service_alert_rows)))
+            logging.info("Successfully stored feed data: {} vehicles, {} trip updates, {} alerts, {} alert entities".format(len(vehicle_position_rows), len(trip_update_rows), len(service_alert_rows), len(service_alert_entity_rows)))
     
     except psycopg.Error as e:
         logging.exception("Database error while storing feed data: {}".format(e))
