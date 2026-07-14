@@ -29,3 +29,25 @@ func (s *AlertService) GetActiveAlertsByRoute(ctx context.Context, routeID strin
 
 	return alerts, nil
 }
+
+// GetSystemWideAlerts returns all active alerts that apply to the
+// entire agency with no specific route, trip, or stop.
+// Called by GET /api/alerts/system
+func (s *AlertService) GetSystemWideAlerts(ctx context.Context) ([]models.ServiceAlert, error) {
+	alerts, err := s.alertRepo.GetSystemWideAlerts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting system wide alerts: %w", err)
+	}
+	return alerts, nil
+}
+
+// GetAllActiveAlerts returns all currently active alerts across the
+// entire transit network regardless of route, trip, or stop.
+// Called by GET /api/alerts
+func (s *AlertService) GetAllActiveAlerts(ctx context.Context) ([]models.ServiceAlert, error) {
+	alerts, err := s.alertRepo.GetAllActiveAlerts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting all active alerts: %w", err)
+	}
+	return alerts, nil
+}
