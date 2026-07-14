@@ -17,30 +17,34 @@ func NewAlertRepository(pool *pgxpool.Pool) *AlertRepository {
 	return &AlertRepository{pool: pool}
 }
 
-// GetActiveAlertsByRoute returns all currently active service alerts.
-// routeID is accepted as a parameter but not yet used in the query
-// because the service_alerts table has no route_id column.
-// Once the team decides on the schema change this method will be
-// updated to filter by route without changing the method signature.
+// GetActiveAlertsByRoute returns all currently active service alerts
+// for a given route by joining service_alerts with service_alert_entities.
+// Uses DISTINCT ON alert_id to avoid duplicate alerts when one alert
+// has multiple entities for the same route.
+// Properly filters by route_id using the service_alert_entities table
 func (r *AlertRepository) GetActiveAlertsByRoute(ctx context.Context, routeID string) ([]models.ServiceAlert, error) {
 	query := `
-		SELECT DISTINCT ON (alert_id)
-			ts,
-			alert_id,
-			cause,
-			effect,
-			header_text,
-			description_text,
-			start_time,
-			end_time
-		FROM service_alerts
-		WHERE (end_time IS NULL OR end_time > NOW())
-		ORDER BY alert_id, ts DESC
+		SELECT DISTINCT ON (sa.alert_id)
+			sa.ts,
+			sa.alert_id,
+			sa.cause,
+			sa.effect,
+			sa.header_text,
+			sa.description_text,
+			sa.start_time,
+			sa.end_time
+		FROM service_alerts sa
+		INNER JOIN service_alert_entities sae
+			ON sa.ts = sae.ts
+			AND sa.alert_id = sae.alert_id
+		WHERE sae.route_id = $1
+		AND (sa.end_time IS NULL OR sa.end_time > NOW())
+		ORDER BY sa.alert_id, sa.ts DESC
 	`
 
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query, routeID)
 	if err != nil {
-		return nil, fmt.Errorf("querying active alerts: %w", err)
+		return nil, fmt.Errorf("querying active alerts for route %s: %w", routeID, err)
 	}
 	defer rows.Close()
 
