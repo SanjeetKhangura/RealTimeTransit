@@ -30,6 +30,46 @@ type AlertListResponse struct {
 	Total   int                    `json:"total"`
 }
 
+// SystemAlertsResponse is the JSON shape returned by GET /api/alerts/system
+// Contains only alerts that apply to the entire agency.
+type SystemAlertsResponse struct {
+	Alerts []ServiceAlertResponse `json:"alerts"`
+	Total  int                    `json:"total"`
+}
+
+// AllAlertsResponse is the JSON shape returned by GET /api/alerts
+// Contains all active alerts across the entire network.
+type AllAlertsResponse struct {
+	Alerts []ServiceAlertResponse `json:"alerts"`
+	Total  int                    `json:"total"`
+}
+
+// ToSystemAlertsResponse converts a slice of models.ServiceAlert
+// to a SystemAlertsResponse DTO.
+func ToSystemAlertsResponse(alerts []models.ServiceAlert) SystemAlertsResponse {
+	response := SystemAlertsResponse{
+		Alerts: make([]ServiceAlertResponse, len(alerts)),
+		Total:  len(alerts),
+	}
+	for i, a := range alerts {
+		response.Alerts[i] = ToServiceAlertResponse(a)
+	}
+	return response
+}
+
+// ToAllAlertsResponse converts a slice of models.ServiceAlert
+// to an AllAlertsResponse DTO.
+func ToAllAlertsResponse(alerts []models.ServiceAlert) AllAlertsResponse {
+	response := AllAlertsResponse{
+		Alerts: make([]ServiceAlertResponse, len(alerts)),
+		Total:  len(alerts),
+	}
+	for i, a := range alerts {
+		response.Alerts[i] = ToServiceAlertResponse(a)
+	}
+	return response
+}
+
 // ToServiceAlertResponse converts a models.ServiceAlert
 // to a ServiceAlertResponse DTO.
 func ToServiceAlertResponse(a models.ServiceAlert) ServiceAlertResponse {
