@@ -49,6 +49,10 @@ func main() {
 	historyService := service.NewHistoryService(tripRepo)
 	historyHandler := handlers.NewHistoryHandler(historyService)
 
+	shapeRepo := repository.NewShapeRepository(db.Pool)
+	shapeService := service.NewShapeService(shapeRepo, routeRepo)
+	shapeHandler := handlers.NewShapeHandler(shapeService)
+
 	// Create Gin router
 	router := gin.Default()
 
@@ -152,6 +156,14 @@ func main() {
 		Summary:     "Get all active alerts across the entire network",
 		Tags:        []string{"alerts"},
 	}, alertHandler.GetAllAlerts)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-route-shape",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/shape",
+		Summary:     "Get the representative shape polyline for a route",
+		Tags:        []string{"shapes"},
+	}, shapeHandler.GetRouteShape)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
