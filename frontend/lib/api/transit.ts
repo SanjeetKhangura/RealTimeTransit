@@ -22,6 +22,7 @@ import type {
   RouteTripUpdatesWire,
   RouteWire,
   StopListWire,
+  SystemAlertsWire,
 } from "./wire";
 import type {
   ReliabilityPoint,
@@ -91,6 +92,15 @@ export async function getAlerts(
   signal?: AbortSignal,
 ): Promise<ServiceAlert[]> {
   const wire = await apiGet<AlertListWire>(`/api/routes/${id}/alerts`, signal);
+  return wire.alerts.map(toServiceAlert);
+}
+
+// Agency-wide alerts (not tied to a route), shown on every route alongside the
+// route's own alerts.
+export async function getSystemAlerts(
+  signal?: AbortSignal,
+): Promise<ServiceAlert[]> {
+  const wire = await apiGet<SystemAlertsWire>("/api/alerts/system", signal);
   return wire.alerts.map(toServiceAlert);
 }
 

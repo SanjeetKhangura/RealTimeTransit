@@ -9,6 +9,7 @@ import type {
   ShapePointWire,
   StopListWire,
   StopWire,
+  SystemAlertsWire,
   TripUpdateWire,
   VehiclePositionWire,
 } from "@/lib/api/wire";
@@ -248,6 +249,28 @@ export function routeAlerts(routeId: string): AlertListWire {
           endTime: null,
         };
   return { routeId, alerts: [alert], total: 1 };
+}
+
+// Mock /api/alerts/system: agency-wide alerts, not tied to any route. The real
+// endpoint returns these from the rows in service_alert_entities that name only
+// the agency.
+export function systemAlerts(): SystemAlertsWire {
+  const now = Date.now();
+  return {
+    alerts: [
+      {
+        alertId: "SYS-1",
+        cause: "MAINTENANCE",
+        effect: "MODIFIED_SERVICE",
+        headerText: "Reduced holiday schedule",
+        descriptionText:
+          "All routes are running on a reduced holiday schedule today. Expect longer waits between buses.",
+        startTime: new Date(now - 2 * 3_600_000).toISOString(),
+        endTime: null,
+      },
+    ],
+    total: 1,
+  };
 }
 
 // Mock /history in the real API wire shape: 24 hourly reliability buckets.

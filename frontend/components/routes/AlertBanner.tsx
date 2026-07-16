@@ -21,7 +21,15 @@ const LABEL: Record<AlertSeverity, string> = {
   critical: "Critical",
 };
 
-export function AlertBanner({ alerts }: { alerts: ServiceAlert[] }) {
+export function AlertBanner({
+  alerts,
+  scopeLabel,
+}: {
+  alerts: ServiceAlert[];
+  // When set (e.g. "Network-wide"), tags each alert so agency-wide notices are
+  // distinguishable from the route's own alerts.
+  scopeLabel?: string;
+}) {
   if (alerts.length === 0) return null;
   return (
     <div className="space-y-2">
@@ -31,8 +39,9 @@ export function AlertBanner({ alerts }: { alerts: ServiceAlert[] }) {
           role={a.severity === "critical" ? "alert" : "status"}
           className={cn("rounded-lg border p-3", BOX[a.severity])}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge tone={TONE[a.severity]}>{LABEL[a.severity]}</Badge>
+            {scopeLabel && <Badge tone="neutral">{scopeLabel}</Badge>}
             <span className="text-sm font-medium">{a.header}</span>
           </div>
           <p className="mt-1 text-xs text-foreground/70">{a.description}</p>

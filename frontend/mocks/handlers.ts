@@ -7,6 +7,7 @@ import {
   routeShape,
   routeStops,
   routeTripUpdates,
+  systemAlerts,
 } from "./fixtures";
 import type {
   AlertListWire,
@@ -17,6 +18,7 @@ import type {
   RouteTripUpdatesWire,
   RouteWire,
   StopListWire,
+  SystemAlertsWire,
 } from "@/lib/api/wire";
 
 // Our seed statuses to the API's status strings, so the mock matches the API.
@@ -41,6 +43,10 @@ export const handlers = [
       region: r.region,
     }));
     return HttpResponse.json<RouteListWire>({ routes, total: routes.length });
+  }),
+
+  http.get("*/api/alerts/system", () => {
+    return HttpResponse.json<SystemAlertsWire>(systemAlerts());
   }),
 
   http.get("*/api/routes/:id/live", ({ params }) => {

@@ -11,6 +11,7 @@ import {
   getRoute,
   getShape,
   getStops,
+  getSystemAlerts,
 } from "@/lib/api/transit";
 import { RouteHeader } from "@/components/routes/RouteHeader";
 import { RouteMapList } from "@/components/routes/RouteMapList";
@@ -47,6 +48,8 @@ function RouteDetailView({ id }: { id: string }) {
   // table (scheduled + realtime times).
   const stops = usePolling((signal) => getStops(id, signal), 30_000);
   const alerts = usePolling((signal) => getAlerts(id, signal), 30_000);
+  // Agency-wide alerts are the same on every route, so this is not keyed by id.
+  const systemAlerts = usePolling((signal) => getSystemAlerts(signal), 60_000);
   const history = usePolling((signal) => getHistory(id, signal), 600_000);
   // The route shape is static, so fetch it rarely (effectively once per visit).
   const shape = usePolling((signal) => getShape(id, signal), 3_600_000);
@@ -90,6 +93,7 @@ function RouteDetailView({ id }: { id: string }) {
       </Link>
       <RouteHeader route={detail.data} dataSource={dataSource} />
 
+      <AlertBanner alerts={systemAlerts.data ?? []} scopeLabel="Network-wide" />
       <AlertBanner alerts={alerts.data ?? []} />
 
       {live.isStale && (

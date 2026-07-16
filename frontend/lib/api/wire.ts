@@ -115,6 +115,13 @@ export interface AlertListWire {
   total: number;
 }
 
+// GET /api/alerts/system (agency-wide) and GET /api/alerts (all active) share
+// this shape. Unlike the per-route list there is no routeId.
+export interface SystemAlertsWire {
+  alerts: AlertWire[];
+  total: number;
+}
+
 export interface HistoryPointWire {
   bucket: string; // ISO 8601 UTC
   avgDelaySecs: number; // positive late, negative early
