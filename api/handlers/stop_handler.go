@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"realtimetransit/dto"
 	"realtimetransit/service"
@@ -19,27 +18,32 @@ func NewStopHandler(stopService *service.StopService) *StopHandler {
 	return &StopHandler{stopService: stopService}
 }
 
+// GetStopsInput defines the path parameter and required trip_id query param.
+// trip_id identifies exactly which bus's schedule to return, avoiding
+// mixed real-time data from multiple trips on the same route.
 type GetStopsInput struct {
-	RouteID string `path:"id" doc:"GTFS route ID"`
+	RouteID string `path:"id"           doc:"GTFS route ID"`
+	TripID  string `query:"trip_id"     doc:"Trip ID to fetch stops for, required" required:"true"`
 }
 
+// GetStopsOutput wraps the response body.
 type GetStopsOutput struct {
-	Body dto.StopListResponse
+	Body dto.TripStopListResponse
 }
 
-// GetStops handles GET /api/routes/{id}/stops
-// Returns all stops for a route with scheduled arrival times
-// and real-time delay if available.
+// GetStops handles GET /api/routes/{id}/stops?trip_id=...
+// Returns all stops for the specified trip with scheduled arrival times
+// and real-time delay if available within the last 300 seconds.
+// trip_id is required to avoid returning mixed real-time data from
+// multiple buses serving the same route.
+// Frontend polls this every 30s for the route detail page.
 func (h *StopHandler) GetStops(ctx context.Context, input *GetStopsInput) (*GetStopsOutput, error) {
-	stops, err := h.stopService.GetStopsWithTimesByRoute(ctx, input.RouteID)
+	stops, err := h.stopService.GetStopsWithTimesByTrip(ctx, input.TripID)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil, huma.NewError(http.StatusNotFound, err.Error())
-		}
 		return nil, huma.NewError(http.StatusInternalServerError, "failed to fetch stops")
 	}
 
 	return &GetStopsOutput{
-		Body: dto.ToStopListResponse(input.RouteID, stops),
+		Body: dto.ToTripStopListResponse(input.RouteID, input.TripID, stops),
 	}, nil
 }
