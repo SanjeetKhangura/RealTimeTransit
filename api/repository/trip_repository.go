@@ -257,3 +257,64 @@ func (r *TripRepository) GetRouteHistory(
 
 	return points, nil
 }
+
+// GetTripScheduleSummariesByRoute returns schedule summary info for every
+// trip on a route: start time, end time, and whether it currently has
+// live real-time data. Lets the frontend pick the active or next
+// departing trip without guessing.
+// start_seconds and end_seconds are seconds since midnight per GTFS spec.
+// is_active is true if the trip has a trip_updates row within the last
+// 300 seconds, matching the staleness window used for live vehicles.
+func (r *TripRepository) GetTripScheduleSummariesByRoute(ctx context.Context, routeID string, datasetID int) ([]models.TripScheduleSummary, error) {
+	query := `
+		SELECT
+			t.trip_id,
+			t.direction_id,
+			t.trip_headsign,
+			MIN(st.arrival_seconds) AS start_seconds,
+			MAX(st.arrival_seconds) AS end_seconds,
+			EXISTS (
+				SELECT 1 FROM trip_updates tu
+				WHERE tu.trip_id = t.trip_id
+				AND tu.ts > NOW() - INTERVAL '300 seconds'
+			) AS is_active
+		FROM trips t
+		JOIN stop_times st
+			ON st.trip_id = t.trip_id
+			AND st.dataset_id = t.dataset_id
+		WHERE t.route_id = $1
+		AND t.dataset_id = $2
+		GROUP BY t.trip_id, t.direction_id, t.trip_headsign
+		ORDER BY start_seconds ASC
+	`
+
+	rows, err := r.pool.Query(ctx, query, routeID, datasetID)
+	if err != nil {
+		return nil, fmt.Errorf("querying trip schedule summaries for route %s: %w", routeID, err)
+	}
+	defer rows.Close()
+
+	summaries := make([]models.TripScheduleSummary, 0)
+
+	for rows.Next() {
+		var s models.TripScheduleSummary
+		err := rows.Scan(
+			&s.TripID,
+			&s.DirectionID,
+			&s.TripHeadsign,
+			&s.StartSeconds,
+			&s.EndSeconds,
+			&s.IsActive,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning trip schedule summary row: %w", err)
+		}
+		summaries = append(summaries, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating trip schedule summary rows: %w", err)
+	}
+
+	return summaries, nil
+}
