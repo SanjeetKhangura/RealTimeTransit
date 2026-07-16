@@ -9,11 +9,15 @@ import (
 )
 
 type TripService struct {
-	tripRepo *repository.TripRepository
+	tripRepo  *repository.TripRepository
+	routeRepo *repository.RouteRepository
 }
 
-func NewTripService(tripRepo *repository.TripRepository) *TripService {
-	return &TripService{tripRepo: tripRepo}
+func NewTripService(tripRepo *repository.TripRepository, routeRepo *repository.RouteRepository) *TripService {
+	return &TripService{
+		tripRepo:  tripRepo,
+		routeRepo: routeRepo,
+	}
 }
 
 // returns most recent trip update for <routeID>
@@ -32,4 +36,21 @@ func (s *TripService) GetTripsByRoute(ctx context.Context, routeID string) ([]mo
 		return nil, fmt.Errorf("Failed to get trips for route %s: %w", routeID, err)
 	}
 	return trips, nil
+}
+
+// GetTripScheduleSummariesByRoute returns schedule summary info for
+// every trip on a route so the frontend can choose the active or
+// next departing trip.
+// Called by GET /api/routes/{id}/trips/schedule
+func (s *TripService) GetTripScheduleSummariesByRoute(ctx context.Context, routeID string) ([]models.TripScheduleSummary, error) {
+	datasetID, err := s.routeRepo.GetLatestDatasetID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting latest dataset: %w", err)
+	}
+
+	summaries, err := s.tripRepo.GetTripScheduleSummariesByRoute(ctx, routeID, datasetID)
+	if err != nil {
+		return nil, fmt.Errorf("getting trip schedule summaries for route %s: %w", routeID, err)
+	}
+	return summaries, nil
 }
