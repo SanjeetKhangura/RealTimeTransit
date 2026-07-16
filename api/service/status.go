@@ -1,6 +1,14 @@
 package service
 
-import "realtimetransit/models"
+import(
+	"context"
+	"fmt"
+	"math"
+	"time"
+	
+	"realtimetransit/models"
+	"realtimetransit/repository"
+)
 
 // Status constants used across route list and route detail responses.
 const (
@@ -18,6 +26,25 @@ const (
 	minorDelayThresholdSecs = 120.0 // 2 minutes
 	disruptedThresholdSecs  = 300.0 // 5 minutes
 )
+
+// StatusService handles business logic for route status
+type StatusService struct {
+	tripRepo    *repository.TripRepository
+	vehicleRepo *repository.VehicleRepository
+	alertRepo   *repository.AlertRepository
+}
+
+func NewStatusService(
+	tripRepo *repository.TripRepository,
+	vehicleRepo *repository.VehicleRepository,
+	alertRepo *repository.AlertRepository,
+) *StatusService {
+	return &StatusService{
+		tripRepo:    tripRepo,
+		vehicleRepo: vehicleRepo,
+		alertRepo:   alertRepo,
+	}
+}
 
 // computeStatus derives a route status string from average delay seconds.
 // Called for both the route list and route detail endpoints.
@@ -61,4 +88,47 @@ func computeHealthScore(metric *models.RouteDelayMetric) float64 {
 	default:
 		return 1.0
 	}
+}
+
+func (s *StatusService) GetRouteStatus(ctx context.Context, routeID string) (models.RouteStatus, error) {
+	// Get the latest delay metric for the route
+	metric, err := s.tripRepo.GetRouteDelayMetric(ctx, routeID)
+	if err != nil {
+		return models.RouteStatus{}, fmt.Errorf("Error getting route delay metric for route %s: %w", routeID, err)
+	}
+
+	vehicles, err := s.vehicleRepo.GetLatestPositionsByRoute(ctx, routeID)
+	if err != nil {
+		return models.RouteStatus{}, fmt.Errorf("Error getting latest positions for route %s: %w", routeID, err)
+	}
+
+	// Get the active alerts for the route
+	alerts, err := s.alertRepo.GetActiveAlertsByRoute(ctx, routeID)
+	if err != nil {
+		return models.RouteStatus{}, fmt.Errorf("Error getting active alerts for route %s: %w", routeID, err)
+	}
+
+	status := computeStatus(metric)
+	healthScore := computeHealthScore(metric)
+
+	// If there are alerts, change to disrupted status
+	if len(alerts) > 0 {
+		status = StatusDisrupted
+	}
+
+	result := models.RouteStatus{
+		RouteID:      routeID,
+		Status:       status,
+		VehicleCount: len(vehicles),
+		AlertCount:   len(alerts),
+		HealthScore:  healthScore,
+		LastUpdated:  time.Now().UTC(),
+	}
+
+	if metric != nil {
+		result.AvgDelay = int(math.Round(metric.AvgDelay))
+		result.SampleSize = metric.SampleSize
+	}
+
+	return result, nil
 }
