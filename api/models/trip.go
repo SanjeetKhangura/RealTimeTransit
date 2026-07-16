@@ -20,3 +20,17 @@ type RouteDelayMetric struct {
 	AvgDelay   float64 `db:"avg_delay"`
 	SampleSize int     `db:"sample_size"`
 }
+
+// TripScheduleSummary holds enough info for the frontend to choose
+// a representative trip: when it starts, when it ends, and whether
+// it currently has live real-time data within the last 300 seconds.
+// computed from trips joined with stop_times
+// and trip_updates.
+type TripScheduleSummary struct {
+	TripID       string  `db:"trip_id"       json:"tripId"`
+	DirectionID  *int    `db:"direction_id"  json:"directionId"`
+	TripHeadsign *string `db:"trip_headsign" json:"tripHeadsign"`
+	StartSeconds *int    `db:"start_seconds" json:"startSeconds"`
+	EndSeconds   *int    `db:"end_seconds"   json:"endSeconds"`
+	IsActive     bool    `db:"is_active"     json:"isActive"`
+}
