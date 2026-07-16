@@ -39,3 +39,21 @@ func (s *StopService) GetStopsWithTimesByRoute(ctx context.Context, routeID stri
 
 	return stops, nil
 }
+
+// GetStopsWithTimesByTrip returns all stops for a given trip with
+// scheduled arrival times and latest real-time delay if available,
+// filtered to the last 300 seconds to exclude stale data.
+// Called by GET /api/routes/{id}/stops?trip_id=...
+func (s *StopService) GetStopsWithTimesByTrip(ctx context.Context, tripID string) ([]models.StopWithTimes, error) {
+	datasetID, err := s.routeRepo.GetLatestDatasetID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting latest dataset: %w", err)
+	}
+
+	stops, err := s.stopRepo.GetStopsWithTimesByTrip(ctx, tripID, datasetID)
+	if err != nil {
+		return nil, fmt.Errorf("getting stops for trip %s: %w", tripID, err)
+	}
+
+	return stops, nil
+}
