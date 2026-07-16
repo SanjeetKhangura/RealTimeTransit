@@ -68,3 +68,29 @@ func ToStopListResponse(routeID string, stops []models.StopWithTimes) StopListRe
 
 	return response
 }
+
+// TripStopListResponse is the JSON shape returned by
+// GET /api/routes/{id}/stops?trip_id=...
+// Includes both the route and trip context so the frontend
+// knows exactly which bus this schedule belongs to.
+type TripStopListResponse struct {
+	RouteID string         `json:"routeId"`
+	TripID  string         `json:"tripId"`
+	Stops   []StopResponse `json:"stops"`
+	Total   int            `json:"total"`
+}
+
+// ToTripStopListResponse converts a slice of models.StopWithTimes
+// to a TripStopListResponse DTO, tagged with the route and trip it belongs to.
+func ToTripStopListResponse(routeID string, tripID string, stops []models.StopWithTimes) TripStopListResponse {
+	response := TripStopListResponse{
+		RouteID: routeID,
+		TripID:  tripID,
+		Stops:   make([]StopResponse, len(stops)),
+		Total:   len(stops),
+	}
+	for i, s := range stops {
+		response.Stops[i] = ToStopResponse(s)
+	}
+	return response
+}
