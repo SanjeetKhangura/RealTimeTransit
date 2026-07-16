@@ -20,10 +20,13 @@ func NewTripRepository(pool *pgxpool.Pool) *TripRepository {
 	return &TripRepository{pool: pool}
 }
 
-// returns the most recent trip update per trip for <routeID>
+// GetTripUpdatesByRoute returns the most recent trip update per stop
+// per trip for a given route, filtered to the last 300 seconds to
+// exclude stale data from previous ingest runs, matching the
+// staleness window used for live vehicle positions.
 func (r *TripRepository) GetTripUpdatesByRoute(ctx context.Context, routeID string) ([]models.TripUpdate, error) {
 	query := `
-		SELECT
+		SELECT DISTINCT ON (trip_id, stop_id)
 			ts,
 			trip_id,
 			route_id,
@@ -36,7 +39,8 @@ func (r *TripRepository) GetTripUpdatesByRoute(ctx context.Context, routeID stri
 			schedule_relationship
 		FROM trip_updates
 		WHERE route_id = $1
-		ORDER BY trip_id, ts DESC
+		AND ts > NOW() - INTERVAL '300 seconds'
+		ORDER BY trip_id, stop_id, ts DESC
 	`
 
 	rows, err := r.pool.Query(ctx, query, routeID)
