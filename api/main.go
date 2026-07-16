@@ -35,7 +35,7 @@ func main() {
 	vehicleService := service.NewVehicleService(vehicleRepo)
 	vehicleHandler := handlers.NewVehicleHandler(vehicleService)
 
-	tripService := service.NewTripService(tripRepo)
+	tripService := service.NewTripService(tripRepo, routeRepo)
 	tripHandler := handlers.NewTripHandler(tripService)
 
 	alertRepo := repository.NewAlertRepository(db.Pool)
@@ -164,6 +164,14 @@ func main() {
 		Summary:     "Get the representative shape polyline for a route",
 		Tags:        []string{"shapes"},
 	}, shapeHandler.GetRouteShape)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-trip-schedule",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/trips/schedule",
+		Summary:     "Get schedule summary for all trips on a route to help pick an active trip",
+		Tags:        []string{"trips"},
+	}, tripHandler.GetTripSchedule)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
