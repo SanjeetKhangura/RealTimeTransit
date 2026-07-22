@@ -53,7 +53,7 @@ func main() {
 	shapeService := service.NewShapeService(shapeRepo, routeRepo)
 	shapeHandler := handlers.NewShapeHandler(shapeService)
 
-	statusService := service.NewStatusService(tripRepo, vehicleRepo, alertRepo)
+	statusService := service.NewStatusService(tripRepo, vehicleRepo, alertRepo, routeRepo)
 	statusHandler := handlers.NewStatusHandler(statusService)
 
 	// Create Gin router
@@ -183,6 +183,14 @@ func main() {
 		Summary:     "Get the current status of a route",
 		Tags:        []string{"status"},
 	}, statusHandler.GetRouteStatus)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-all-route-statuses",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/status",
+		Summary:     "Get the current status of all routes",
+		Tags:        []string{"status"},
+	}, statusHandler.GetAllRouteStatuses)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)

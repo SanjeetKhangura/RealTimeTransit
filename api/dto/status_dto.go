@@ -28,3 +28,19 @@ func ToRouteStatusResponse(status models.RouteStatus) RouteStatusResponse {
 		LastUpdated: 	status.LastUpdated,
 	}
 }
+
+type AllRouteStatusResponse struct {
+	Count 		int						`json:"count"`
+	Statuses 	[]RouteStatusResponse	`json:"statuses"`
+}
+
+func ToAllRouteStatusResponse(statuses []models.RouteStatus) AllRouteStatusResponse {
+	result := make([]RouteStatusResponse, len(statuses))
+	for i, status := range statuses {
+		result[i] = ToRouteStatusResponse(status)
+	}
+	return AllRouteStatusResponse{
+		Count: len(result),
+		Statuses: result,
+	}
+}

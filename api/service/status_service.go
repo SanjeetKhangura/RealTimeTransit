@@ -32,17 +32,20 @@ type StatusService struct {
 	tripRepo    *repository.TripRepository
 	vehicleRepo *repository.VehicleRepository
 	alertRepo   *repository.AlertRepository
+	routeRepo   *repository.RouteRepository
 }
 
 func NewStatusService(
 	tripRepo *repository.TripRepository,
 	vehicleRepo *repository.VehicleRepository,
 	alertRepo *repository.AlertRepository,
+	routeRepo *repository.RouteRepository,
 ) *StatusService {
 	return &StatusService{
 		tripRepo:    tripRepo,
 		vehicleRepo: vehicleRepo,
 		alertRepo:   alertRepo,
+		routeRepo:   routeRepo,
 	}
 }
 
@@ -131,4 +134,31 @@ func (s *StatusService) GetRouteStatus(ctx context.Context, routeID string) (mod
 	}
 
 	return result, nil
+}
+
+// retrieves the status for all routes in the system and caches the results for better performance
+func (s *StatusService) GetAllRouteStatuses(ctx context.Context) ([]models.RouteStatus, error) {
+	// Get the latest dataset ID
+	datasetID, err := s.routeRepo.GetLatestDatasetID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting latest dataset ID: %w", err)
+	}
+
+	// Get all route IDs from the route repository
+	routes, err := s.routeRepo.GetAllRoutes(ctx, datasetID)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting all routes: %w", err)
+	}
+
+	statuses := make([]models.RouteStatus, 0, len(routes))
+	
+	for _, route := range routes {
+		status, err := s.GetRouteStatus(ctx, route.RouteID)
+		if err != nil {
+			return nil, fmt.Errorf("Error getting status for route %s: %w", route.RouteID, err)
+		}
+		statuses = append(statuses, status)
+	}
+
+	return statuses, nil
 }

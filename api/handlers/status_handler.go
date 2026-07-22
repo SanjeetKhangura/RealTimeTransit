@@ -40,3 +40,21 @@ func (h *StatusHandler) GetRouteStatus(ctx context.Context, input *GetRouteStatu
 		Body: dto.ToRouteStatusResponse(status),
 	}, nil
 }
+
+type GetAllRouteStatusesInput struct{}
+
+type GetAllRouteStatusesOutput struct {
+	Body dto.AllRouteStatusResponse
+}
+
+func (h *StatusHandler) GetAllRouteStatuses(ctx context.Context, input *GetAllRouteStatusesInput) (*GetAllRouteStatusesOutput, error) {
+	statuses, err := h.statusService.GetAllRouteStatuses(ctx)
+	if err != nil {
+		log.Printf("Error getting all route statuses: %v", err)
+		return nil, huma.NewError(http.StatusInternalServerError, "Failed to get all route statuses")
+	}
+
+	return &GetAllRouteStatusesOutput{
+		Body: dto.ToAllRouteStatusResponse(statuses),
+	}, nil
+}
