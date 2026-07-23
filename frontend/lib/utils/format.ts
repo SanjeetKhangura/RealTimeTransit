@@ -24,6 +24,14 @@ export function formatHour(value: string | Date): string {
   return format(new TZDate(toDate(value), AGENCY_TZ), "ha");
 }
 
+// Current time as seconds since midnight in agency time. Trip schedule bounds
+// (startSeconds/endSeconds) use this same agency-local scale, so this is what
+// we compare against when picking the next-departing trip.
+export function agencySecondsNow(now: number = Date.now()): number {
+  const d = new TZDate(new Date(now), AGENCY_TZ);
+  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+}
+
 // Short "x ago" string for freshness indicators.
 export function formatRelative(value: string | Date, now: number = Date.now()): string {
   const seconds = Math.round((now - toDate(value).getTime()) / 1000);

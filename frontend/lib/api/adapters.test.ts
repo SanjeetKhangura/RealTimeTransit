@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  pickTripId,
   toReliabilityPoint,
   toRouteDetail,
   toRouteSummary,
@@ -10,6 +11,7 @@ import {
   toVehicles,
   tripUpdateToStopAdherence,
 } from "./adapters";
+import type { TripScheduleSummaryWire } from "./wire";
 import type {
   AlertWire,
   LiveVehiclesWire,
@@ -270,6 +272,47 @@ describe("toShape", () => {
     expect(
       toShape({ routeId: "99", shapeId: "", points: [], total: 0 }),
     ).toEqual([]);
+  });
+});
+
+describe("pickTripId", () => {
+  const trip = (
+    tripId: string,
+    startSeconds: number | null,
+    isActive = false,
+  ): TripScheduleSummaryWire => ({
+    tripId,
+    directionId: 0,
+    tripHeadsign: null,
+    startSeconds,
+    endSeconds: startSeconds === null ? null : startSeconds + 3600,
+    isActive,
+  });
+
+  const noon = 12 * 3600;
+
+  it("returns null when there are no trips", () => {
+    expect(pickTripId([], noon)).toBeNull();
+  });
+
+  it("prefers a trip that is currently active", () => {
+    const trips = [trip("a", 6 * 3600), trip("b", 8 * 3600, true)];
+    expect(pickTripId(trips, noon)).toBe("b");
+  });
+
+  it("picks the next trip to depart when none are active", () => {
+    const trips = [trip("early", 6 * 3600), trip("next", 14 * 3600), trip("late", 18 * 3600)];
+    expect(pickTripId(trips, noon)).toBe("next");
+  });
+
+  it("falls back to the earliest trip when all have departed", () => {
+    const trips = [trip("first", 6 * 3600), trip("second", 9 * 3600)];
+    expect(pickTripId(trips, 22 * 3600)).toBe("first");
+  });
+
+  it("falls back to the first trip when no start times are set", () => {
+    const trips = [trip("x", null), trip("y", null)];
+    expect(pickTripId(trips, noon)).toBe("x");
   });
 });
 

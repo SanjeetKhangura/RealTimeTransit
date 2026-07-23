@@ -93,9 +93,31 @@ export interface StopWire {
   arrivalTime: string | null; // realtime predicted arrival, ISO 8601 UTC
 }
 
-export interface StopListWire {
+// GET /api/routes/{id}/stops?trip_id=... returns one trip's ordered stops.
+// trip_id is required; the frontend picks a trip from the schedule endpoint
+// first so the realtime delays all belong to the same bus.
+export interface TripStopListWire {
   routeId: string;
+  tripId: string;
   stops: StopWire[];
+  total: number;
+}
+
+// GET /api/routes/{id}/trips/schedule: one summary per trip, used to pick the
+// active or next-departing trip. startSeconds/endSeconds are seconds since
+// midnight in agency-local time; isActive means the trip has live data now.
+export interface TripScheduleSummaryWire {
+  tripId: string;
+  directionId: number | null;
+  tripHeadsign: string | null;
+  startSeconds: number | null;
+  endSeconds: number | null;
+  isActive: boolean;
+}
+
+export interface TripScheduleListWire {
+  routeId: string;
+  trips: TripScheduleSummaryWire[];
   total: number;
 }
 

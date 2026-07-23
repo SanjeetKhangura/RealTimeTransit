@@ -23,6 +23,7 @@ import type {
   RouteShapeWire,
   RouteWire,
   StopWire,
+  TripScheduleSummaryWire,
   TripUpdateWire,
 } from "./wire";
 
@@ -69,6 +70,29 @@ export function toShape(w: RouteShapeWire): [number, number][] {
   return [...w.points]
     .sort((a, b) => a.sequence - b.sequence)
     .map((p) => [p.lat, p.lon]);
+}
+
+// The /stops endpoint needs a trip_id, so pick which trip's schedule to show.
+// Prefer a trip that currently has live data; otherwise the next trip to depart
+// today; otherwise the earliest trip. nowSeconds is the current time as seconds
+// since midnight in agency time.
+export function pickTripId(
+  trips: TripScheduleSummaryWire[],
+  nowSeconds: number,
+): string | null {
+  if (trips.length === 0) return null;
+  const active = trips.find((t) => t.isActive);
+  if (active) return active.tripId;
+  const scheduled = trips
+    .filter(
+      (t): t is TripScheduleSummaryWire & { startSeconds: number } =>
+        t.startSeconds !== null,
+    )
+    .sort((a, b) => a.startSeconds - b.startSeconds);
+  const next = scheduled.find((t) => t.startSeconds >= nowSeconds);
+  if (next) return next.tripId;
+  if (scheduled.length > 0) return scheduled[0].tripId;
+  return trips[0].tripId;
 }
 
 // GTFS-RT current_status to our movement enum.

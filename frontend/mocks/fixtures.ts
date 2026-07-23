@@ -7,9 +7,11 @@ import type {
   RouteShapeWire,
   RouteTripUpdatesWire,
   ShapePointWire,
-  StopListWire,
   StopWire,
   SystemAlertsWire,
+  TripScheduleListWire,
+  TripScheduleSummaryWire,
+  TripStopListWire,
   TripUpdateWire,
   VehiclePositionWire,
 } from "@/lib/api/wire";
@@ -176,10 +178,25 @@ export function routeShape(routeId: string): RouteShapeWire {
 const STOP_NAMES = ["Terminal", "Central Station", "Main St", "Broadway", "University Loop"];
 const DELAY_BY_STATUS = { clear: 30, warning: 240, issue: 540 } as const;
 
-// Mock /stops in the real API wire shape, with names, coordinates, and times.
-export function routeStops(routeId: string): StopListWire {
+// Mock /api/routes/{id}/trips/schedule: a few trips through the day. One is
+// marked active so the picker selects it and the schedule table has data, even
+// though the real feed reports isActive false until ingest runs continuously.
+export function routeTripSchedule(routeId: string): TripScheduleListWire {
   const route = findRoute(routeId);
-  if (!route) return { routeId, stops: [], total: 0 };
+  if (!route) return { routeId, trips: [], total: 0 };
+  const trips: TripScheduleSummaryWire[] = [
+    { tripId: `${routeId}-T1`, directionId: 0, tripHeadsign: route.longName, startSeconds: 6 * 3600, endSeconds: 7 * 3600, isActive: true },
+    { tripId: `${routeId}-T2`, directionId: 0, tripHeadsign: route.longName, startSeconds: 12 * 3600, endSeconds: 13 * 3600, isActive: false },
+    { tripId: `${routeId}-T3`, directionId: 1, tripHeadsign: "Downtown", startSeconds: 18 * 3600, endSeconds: 19 * 3600, isActive: false },
+  ];
+  return { routeId, trips, total: trips.length };
+}
+
+// Mock /api/routes/{id}/stops?trip_id=... in the real API wire shape: one
+// trip's ordered stops with names, coordinates, and times.
+export function routeStops(routeId: string, tripId: string): TripStopListWire {
+  const route = findRoute(routeId);
+  if (!route) return { routeId, tripId, stops: [], total: 0 };
   const [lat, lon] = routeBase(route);
   const now = Date.now();
   const delay = DELAY_BY_STATUS[route.status];
@@ -197,7 +214,7 @@ export function routeStops(routeId: string): StopListWire {
     arrivalDelay: i === 0 ? 0 : delay,
     arrivalTime: new Date(now + i * 5 * 60_000).toISOString(),
   }));
-  return { routeId, stops, total: stops.length };
+  return { routeId, tripId, stops, total: stops.length };
 }
 
 // Mock /trip-updates in the real API wire shape (secondary to /stops).

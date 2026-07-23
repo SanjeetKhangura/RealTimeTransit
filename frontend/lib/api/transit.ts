@@ -4,6 +4,7 @@
 
 import { ApiError, apiGet } from "./client";
 import {
+  pickTripId,
   toReliabilityPoint,
   toRouteDetail,
   toRouteSummary,
@@ -13,6 +14,7 @@ import {
   toVehicles,
   tripUpdateToStopAdherence,
 } from "./adapters";
+import { agencySecondsNow } from "@/lib/utils/format";
 import type {
   AlertListWire,
   LiveVehiclesWire,
@@ -21,8 +23,9 @@ import type {
   RouteShapeWire,
   RouteTripUpdatesWire,
   RouteWire,
-  StopListWire,
   SystemAlertsWire,
+  TripScheduleListWire,
+  TripStopListWire,
 } from "./wire";
 import type {
   ReliabilityPoint,
@@ -69,14 +72,27 @@ export async function getShape(
   }
 }
 
-// Stops with names, coordinates, and scheduled + realtime times. Feeds the
-// schedule table and the map markers.
+// Stops with names, coordinates, and scheduled + realtime times, for the
+// schedule table and the map markers. /stops now needs a trip_id, so we first
+// read the trip schedule, pick the active or next trip, then fetch its stops.
+// That keeps every realtime delay tied to the same bus. Returns [] when the
+// route has no trips yet.
 export async function getStops(
   id: string,
   signal?: AbortSignal,
 ): Promise<StopAdherence[]> {
-  const wire = await apiGet<StopListWire>(`/api/routes/${id}/stops`, signal);
-  // /stops returns a row per trip, so keep the first row per stop.
+  const schedule = await apiGet<TripScheduleListWire>(
+    `/api/routes/${id}/trips/schedule`,
+    signal,
+  );
+  const tripId = pickTripId(schedule.trips, agencySecondsNow());
+  if (!tripId) return [];
+
+  const wire = await apiGet<TripStopListWire>(
+    `/api/routes/${id}/stops?trip_id=${encodeURIComponent(tripId)}`,
+    signal,
+  );
+  // A trip visits each stop once, but dedupe defensively for loop routes.
   const seen = new Set<string>();
   const out: StopAdherence[] = [];
   for (const s of wire.stops) {

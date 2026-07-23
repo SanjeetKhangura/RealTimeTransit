@@ -6,6 +6,7 @@ import {
   routeHistory,
   routeShape,
   routeStops,
+  routeTripSchedule,
   routeTripUpdates,
   systemAlerts,
 } from "./fixtures";
@@ -17,8 +18,9 @@ import type {
   RouteShapeWire,
   RouteTripUpdatesWire,
   RouteWire,
-  StopListWire,
   SystemAlertsWire,
+  TripScheduleListWire,
+  TripStopListWire,
 } from "@/lib/api/wire";
 
 // Our seed statuses to the API's status strings, so the mock matches the API.
@@ -54,9 +56,17 @@ export const handlers = [
     return HttpResponse.json<LiveVehiclesWire>(liveVehicles(id));
   }),
 
-  http.get("*/api/routes/:id/stops", ({ params }) => {
+  http.get("*/api/routes/:id/trips/schedule", ({ params }) => {
     const id = String(params.id);
-    return HttpResponse.json<StopListWire>(routeStops(id));
+    return HttpResponse.json<TripScheduleListWire>(routeTripSchedule(id));
+  }),
+
+  http.get("*/api/routes/:id/stops", ({ params, request }) => {
+    const id = String(params.id);
+    const tripId = new URL(request.url).searchParams.get("trip_id");
+    // The real endpoint requires trip_id (Huma returns 422 without it).
+    if (!tripId) return new HttpResponse(null, { status: 422 });
+    return HttpResponse.json<TripStopListWire>(routeStops(id, tripId));
   }),
 
   http.get("*/api/routes/:id/trip-updates", ({ params }) => {
