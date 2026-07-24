@@ -13,7 +13,7 @@ type TripUpdateResponse struct {
 	StopSequence    		*int       		`json:"stopSequence"`
 	ArrivalDelay   			*int       		`json:"arrivalDelay"`
 	ArrivalTime    			*time.Time 		`json:"arrivalTime"`
-	DeoartureDelay  		*int       		`json:"departureDelay"`
+	DepartureDelay  		*int       		`json:"departureDelay"`
 	DepartureTime  			*time.Time 		`json:"departureTime"`
 	ScheduleRelationship 	*string    		`json:"scheduleRelationship"`
 }
@@ -33,7 +33,7 @@ func ToTripUpdateResponse(t models.TripUpdate) TripUpdateResponse {
 		StopSequence: t.StopSequence,
 		ArrivalDelay: t.ArrivalDelay,
 		ArrivalTime: t.ArrivalTime,
-		DeoartureDelay: t.DeoartureDelay,
+		DepartureDelay: t.DepartureDelay,
 		DepartureTime: t.DepartureTime,
 		ScheduleRelationship: t.ScheduleRelationship,
 	}

@@ -10,7 +10,7 @@ type TripUpdate struct {
 	StopSequence         *int       `db:"stop_sequence"         json:"stopSequence"`
 	ArrivalDelay         *int       `db:"arrival_delay"         json:"arrivalDelay"`
 	ArrivalTime          *time.Time `db:"arrival_time"          json:"arrivalTime"`
-	DeoartureDelay       *int       `db:"departure_delay"       json:"departureDelay"`
+	DepartureDelay       *int       `db:"departure_delay"       json:"departureDelay"`
 	DepartureTime        *time.Time `db:"departure_time"        json:"departureTime"`
 	ScheduleRelationship *string    `db:"schedule_relationship" json:"scheduleRelationship"`
 }

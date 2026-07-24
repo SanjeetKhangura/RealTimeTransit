@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"realtimetransit/models"
 	"realtimetransit/repository"
@@ -29,14 +30,20 @@ func (s *TripService) GetTripUpdatesByRoute(ctx context.Context, routeID string)
 	return updates, nil
 }
 
-// returns all trips for <routeID> with the latest dataset_id, which is used to filter trips to the most recent GTFS data
+// returns all active trips for <routeID> with the latest dataset_id and service_date = today in America/Vancouver timezone
 func (s *TripService) GetTripsByRoute(ctx context.Context, routeID string) ([]models.Trip, error) {
 	datasetID, err := s.routeRepo.GetLatestDatasetID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get latest dataset ID: %w", err)
 	}
 
-	trips, err := s.tripRepo.GetTripsByRoute(ctx, routeID, datasetID)
+	location, err := time.LoadLocation("America/Vancouver")
+	if err != nil {
+		return nil, fmt.Errorf("Failed to load location: %w", err)
+	}
+	serviceDate := time.Now().In(location)
+
+	trips, err := s.tripRepo.GetTripsByRoute(ctx, routeID, datasetID, serviceDate)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get trips for route %s: %w", routeID, err)
 	}

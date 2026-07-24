@@ -63,7 +63,7 @@ func (r *TripRepository) GetTripUpdatesByRoute(ctx context.Context, routeID stri
 			&u.StopSequence,
 			&u.ArrivalDelay,
 			&u.ArrivalTime,
-			&u.DeoartureDelay,
+			&u.DepartureDelay,
 			&u.DepartureTime,
 			&u.ScheduleRelationship,
 		)
@@ -80,7 +80,8 @@ func (r *TripRepository) GetTripUpdatesByRoute(ctx context.Context, routeID stri
 	return updates, nil
 }
 
-func (r *TripRepository) GetTripsByRoute(ctx context.Context, routeID string, datasetID int) ([]models.Trip, error) {
+func (r *TripRepository) GetTripsByRoute(ctx context.Context, routeID string, datasetID int, serviceDate time.Time) ([]models.Trip, error) {
+	/*
 	query := `
 		SELECT
 			dataset_id,
@@ -96,8 +97,57 @@ func (r *TripRepository) GetTripsByRoute(ctx context.Context, routeID string, da
 		WHERE route_id = $1 AND dataset_id = $2
 		ORDER BY trip_id
 	`
+	*/
+	// query to filter trips by active service on the given serviceDate, using the calendar and calendar_dates tables
+	// holidays and exceptions are handled by checking the calendar_dates table for exception_type = 1 (added service) or exception_type = 2 (removed service)
+	query := `
+		WITH active_services AS (
+			SELECT service_id
+			FROM calendar
+			WHERE dataset_id = $2
+			AND start_date <= $3
+			AND end_date >= $3
+			AND (
+				(CASE WHEN EXTRACT(DOW FROM $3) = 0 THEN sunday ELSE 0 END) +
+				(CASE WHEN EXTRACT(DOW FROM $3) = 1 THEN monday ELSE 0 END) +
+				(CASE WHEN EXTRACT(DOW FROM $3) = 2 THEN tuesday ELSE 0 END) +
+				(CASE WHEN EXTRACT(DOW FROM $3) = 3 THEN wednesday ELSE 0 END) +
+				(CASE WHEN EXTRACT(DOW FROM $3) = 4 THEN thursday ELSE 0 END) +
+				(CASE WHEN EXTRACT(DOW FROM $3) = 5 THEN friday ELSE 0 END) +
+				(CASE WHEN EXTRACT(DOW FROM $3) = 6 THEN saturday ELSE 0 END)
+			) = 1
+			AND NOT EXISTS (
+				SELECT 1
+				FROM calendar_dates
+				WHERE dataset_id = $2
+				AND service_id = calendar.service_id
+				AND date = $3
+				AND exception_type = 2
+			)
+			UNION
+			SELECT service_id
+			FROM calendar_dates
+			WHERE dataset_id = $2
+			AND date = $3
+			AND exception_type = 1
+		)
+		SELECT
+			t.dataset_id,
+			t.trip_id,
+			t.route_id,
+			t.service_id,
+			t.direction_id,
+			t.shape_id,
+			t.trip_headsign,
+			t.wheelchair_accessible,
+			t.bikes_allowed
+		FROM trips t
+		JOIN active_services a ON t.service_id = a.service_id
+		WHERE t.route_id = $1 AND t.dataset_id = $2
+		ORDER BY t.trip_id
+	`
 
-	rows, err := r.pool.Query(ctx, query, routeID, datasetID)
+	rows, err := r.pool.Query(ctx, query, routeID, datasetID, serviceDate)
 	if err != nil {
 		return nil, fmt.Errorf("Failed querying trips for route %s: %w", routeID, err)
 	}
