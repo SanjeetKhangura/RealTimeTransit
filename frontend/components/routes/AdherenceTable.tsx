@@ -40,10 +40,10 @@ export function AdherenceTable({ stops }: { stops: StopAdherence[] }) {
             <tr key={s.stopId} className="border-b border-foreground/5">
               <td className="py-2 pr-3">{s.stopName}</td>
               <td className="py-2 pr-3">
-                {s.scheduledArrival ? formatTime(s.scheduledArrival) : "N/A"}
+                {s.scheduledArrival ?? "N/A"}
               </td>
               <td className="py-2 pr-3 text-foreground/60">
-                {s.predictedArrival ? formatTime(s.predictedArrival) : "N/A"}
+                {s.predictedArrival ? formatTime(s.predictedArrival) : "No prediction available"}
               </td>
               <td className="py-2">
                 {s.arrivalDelay === null ? (

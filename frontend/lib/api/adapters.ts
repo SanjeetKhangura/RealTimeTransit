@@ -26,6 +26,7 @@ import type {
   TripScheduleSummaryWire,
   TripUpdateWire,
 } from "./wire";
+import { formatGtfsTime } from "@/lib/utils/format";
 
 // API status string to our status level. Unknown or absent leaves no status.
 const API_STATUS: Record<string, StatusLevel> = {
@@ -128,22 +129,17 @@ export function toVehicles(w: LiveVehiclesWire): Vehicle[] {
 
 // Primary schedule/adherence source. /stops carries names, coordinates, and
 // scheduled + realtime arrival times, so it feeds both the schedule table and
-// the map markers. Scheduled is reconstructed from the realtime arrival minus
-// the delay; the static scheduled time (arrivalSeconds) is also available and
-// can replace this once we can verify the timezone handling against the API.
+// the map markers. Scheduled Arrival is based on the static scheduled time (arrivalSeconds)
+// if no scheduled data is available, fallback to the departure time (departureSeconds).
 export function toStopAdherence(s: StopWire): StopAdherence {
-  let scheduledArrival: string | null = null;
-  if (s.arrivalTime && s.arrivalDelay !== null) {
-    scheduledArrival = new Date(
-      new Date(s.arrivalTime).getTime() - s.arrivalDelay * 1000,
-    ).toISOString();
-  }
+  const scheduledArrivalSeconds = s.arrivalSeconds ?? s.departureSeconds;
+
   return {
     stopId: s.stopId,
     stopName: s.stopName ?? s.stopId,
     lat: s.stopLat ?? undefined,
     lon: s.stopLon ?? undefined,
-    scheduledArrival,
+    scheduledArrival: formatGtfsTime(scheduledArrivalSeconds),
     predictedArrival: s.arrivalTime ?? null,
     arrivalDelay: s.arrivalDelay,
   };
