@@ -80,7 +80,7 @@ func (r *TripRepository) GetTripUpdatesByRoute(ctx context.Context, routeID stri
 	return updates, nil
 }
 
-func (r *TripRepository) GetTripsByRoute(ctx context.Context, routeID string) ([]models.Trip, error) {
+func (r *TripRepository) GetTripsByRoute(ctx context.Context, routeID string, datasetID int) ([]models.Trip, error) {
 	query := `
 		SELECT
 			dataset_id,
@@ -93,11 +93,11 @@ func (r *TripRepository) GetTripsByRoute(ctx context.Context, routeID string) ([
 			wheelchair_accessible,
 			bikes_allowed
 		FROM trips
-		WHERE route_id = $1
+		WHERE route_id = $1 AND dataset_id = $2
 		ORDER BY trip_id
 	`
 
-	rows, err := r.pool.Query(ctx, query, routeID)
+	rows, err := r.pool.Query(ctx, query, routeID, datasetID)
 	if err != nil {
 		return nil, fmt.Errorf("Failed querying trips for route %s: %w", routeID, err)
 	}

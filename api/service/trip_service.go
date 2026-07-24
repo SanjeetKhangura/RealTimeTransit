@@ -29,9 +29,14 @@ func (s *TripService) GetTripUpdatesByRoute(ctx context.Context, routeID string)
 	return updates, nil
 }
 
-// returns all trips for <routeID>
+// returns all trips for <routeID> with the latest dataset_id, which is used to filter trips to the most recent GTFS data
 func (s *TripService) GetTripsByRoute(ctx context.Context, routeID string) ([]models.Trip, error) {
-	trips, err := s.tripRepo.GetTripsByRoute(ctx, routeID)
+	datasetID, err := s.routeRepo.GetLatestDatasetID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get latest dataset ID: %w", err)
+	}
+
+	trips, err := s.tripRepo.GetTripsByRoute(ctx, routeID, datasetID)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get trips for route %s: %w", routeID, err)
 	}
