@@ -28,6 +28,7 @@ import { StaleBanner } from "@/components/ui/StaleBanner";
 import { formatRelative, agencySecondsNow, formatGtfsTime } from "@/lib/utils/format";
 import type { DataSource } from "@/types/domain";
 import type { TripScheduleSummary } from "@/types/api";
+import { AdherenceSummary } from "@/components/routes/AdherenceSummary";
 
 const RouteMap = dynamic(() => import("@/components/routes/RouteMap"), {
   ssr: false,
@@ -254,7 +255,10 @@ function RouteDetailView({ id }: { id: string }) {
           ) : stopList.length === 0 ? (
             <p className="text-sm text-foreground/50">No stops available for this trip.</p>
           ) : (
-          <AdherenceTable stops={stopList} />
+            <div className="space-y-4">
+              <AdherenceSummary stops={stopList} />
+              <AdherenceTable stops={stopList} />
+            </div>
         )}
       </>
     )}
