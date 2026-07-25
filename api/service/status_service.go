@@ -23,8 +23,8 @@ const (
 // When the admin threshold configuration is built these will be
 // read from config instead of being hardcoded here.
 const (
-	minorDelayThresholdSecs = 120.0 // 2 minutes
-	disruptedThresholdSecs  = 300.0 // 5 minutes
+	minorDelayThresholdSecs = 180.0 // 3 minutes
+	disruptedThresholdSecs  = 480.0 // 8 minutes
 )
 
 // StatusService handles business logic for route status

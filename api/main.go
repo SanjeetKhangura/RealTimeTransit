@@ -56,6 +56,10 @@ func main() {
 	statusService := service.NewStatusService(tripRepo, vehicleRepo, alertRepo, routeRepo)
 	statusHandler := handlers.NewStatusHandler(statusService)
 
+	bunchingRepo := repository.NewBunchingRepository(db.Pool)
+	bunchingService := service.NewBunchingService(bunchingRepo, routeRepo)
+	bunchingHandler := handlers.NewBunchingHandler(bunchingService)
+
 	// Create Gin router
 	router := gin.Default()
 
@@ -190,7 +194,15 @@ func main() {
 		Path:        "/api/routes/status",
 		Summary:     "Get the current status of all routes",
 		Tags:        []string{"status"},
-	}, statusHandler.GetAllRouteStatuses)
+}, statusHandler.GetAllRouteStatuses)
+
+	huma.Register(api, huma.Operation{
+		OperationID: "get-route-bunching",
+		Method:      http.MethodGet,
+		Path:        "/api/routes/{id}/bunching",
+		Summary:     "Detect bunching pairs for a route",
+		Tags:        []string{"bunching"},
+	}, bunchingHandler.GetBunchingPairsByRoute)
 
 	// Start server
 	addr := fmt.Sprintf(":%s", cfg.Port)
