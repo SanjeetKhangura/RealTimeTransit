@@ -192,8 +192,15 @@ function RouteDetailView({ id }: { id: string }) {
       )}
       <RouteMap vehicles={vehicles} shape={shape.data ?? []} stops={stopList} />
 
-      <BunchingBanner bunchingPairs={bunchingPairs.data ?? []} />
-
+      { bunchingPairs.error ? (
+        <div className="rounded-xl border border-foreground/10 p-3 text-sm text-foreground/60">
+          Bunching data is currently unavailable. <button onClick={bunchingPairs.refresh} className="ml-2 underline">Retry</button>
+        </div>
+      ) : (
+        <BunchingBanner bunchingPairs={bunchingPairs.data ?? []} />
+      )
+      }
+      
       <section aria-label="Live vehicles on this route" className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">Live vehicles</h2>
