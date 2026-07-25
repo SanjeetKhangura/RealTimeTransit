@@ -158,3 +158,23 @@ export interface RouteHistoryWire {
   points: HistoryPointWire[];
   total: number;
 }
+
+export interface BunchingPairWire {
+  routeId: string;
+  directionId: number | null;
+  leadingVehicleId: string;
+  followingVehicleId: string;
+  leadingTripId: string;
+  followingTripId: string;
+  distanceAlongRoute: number; // meters
+  leadingProgress: number;
+  followingProgress: number;
+  severity: "advisory" | "warning" | "alert";
+  detectedAt: string;
+}
+
+export interface BunchingResponseWire {
+  routeId: string;
+  pairs: BunchingPairWire[];
+  count: number;
+}

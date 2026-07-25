@@ -26,6 +26,7 @@ import type {
   SystemAlertsWire,
   TripScheduleListWire,
   TripStopListWire,
+  BunchingResponseWire,
 } from "./wire";
 import type {
   ReliabilityPoint,
@@ -35,6 +36,7 @@ import type {
   StopAdherence,
   Vehicle,
   TripScheduleSummary,
+  BunchingPair,
 } from "@/types/api";
 
 export async function getRoutes(signal?: AbortSignal): Promise<RouteSummary[]> {
@@ -184,3 +186,24 @@ export async function getTripStops(
   }
   return out;
 }
+
+export async function getBunchingPairs(
+  routeId: string,
+  signal?: AbortSignal,
+): Promise<BunchingPair[]> {
+  const wire = await apiGet<BunchingResponseWire>(
+    `/api/routes/${routeId}/bunching`,
+    signal,
+  );
+  return wire.pairs.map((p) => ({
+    routeId: p.routeId,
+    directionId: p.directionId,
+    leadingVehicleId: p.leadingVehicleId,
+    followingVehicleId: p.followingVehicleId,
+    distanceAlongRoute: p.distanceAlongRoute,
+    severity: p.severity,
+    detectedAt: p.detectedAt,
+  }));
+}
+
+

@@ -15,6 +15,7 @@ import {
   getSystemAlerts,
   getTripSchedules,
   getTripStops,
+  getBunchingPairs,
 } from "@/lib/api/transit";
 import { RouteHeader } from "@/components/routes/RouteHeader";
 import { RouteMapList } from "@/components/routes/RouteMapList";
@@ -29,6 +30,7 @@ import { formatRelative, agencySecondsNow, formatGtfsTime } from "@/lib/utils/fo
 import type { DataSource } from "@/types/domain";
 import type { TripScheduleSummary } from "@/types/api";
 import { AdherenceSummary } from "@/components/routes/AdherenceSummary";
+import BunchingBanner from "@/components/routes/BunchingBanner";
 
 const RouteMap = dynamic(() => import("@/components/routes/RouteMap"), {
   ssr: false,
@@ -86,6 +88,8 @@ function RouteDetailView({ id }: { id: string }) {
   const shape = usePolling((signal) => getShape(id, signal), 3_600_000);
   // Trip schedules are used to pick the active trip and fetch its stops.
   const tripSchedules = usePolling((signal) => getTripSchedules(id, signal), 300_000,);
+  // Bunching pairs are polled to detect potential bunching situations on the route.
+  const bunchingPairs = usePolling((signal) => getBunchingPairs(id, signal), 30_000);
 
   const directions = useMemo(() => {
     const map = new Map<string, { key: string; label: string }>();
@@ -187,6 +191,8 @@ function RouteDetailView({ id }: { id: string }) {
         <StaleBanner lastUpdated={live.lastUpdated} onRetry={live.refresh} />
       )}
       <RouteMap vehicles={vehicles} shape={shape.data ?? []} stops={stopList} />
+
+      <BunchingBanner bunchingPairs={bunchingPairs.data ?? []} />
 
       <section aria-label="Live vehicles on this route" className="space-y-2">
         <div className="flex items-center justify-between">

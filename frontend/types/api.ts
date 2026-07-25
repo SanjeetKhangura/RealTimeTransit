@@ -69,3 +69,13 @@ export interface TripScheduleSummary {
   endSeconds: number | null;
   isActive: boolean;
 }
+
+export interface BunchingPair {
+  routeId: string;
+  directionId: number | null;
+  leadingVehicleId: string;
+  followingVehicleId: string;
+  distanceAlongRoute: number;
+  severity: "advisory" | "warning" | "alert";
+  detectedAt: string;
+}
