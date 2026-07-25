@@ -6,22 +6,22 @@ import (
 )
 
 type BunchingPairResponse struct {
-	RouteID          		string    	`json:"route_id"`
-	DirectionID      		*int       	`json:"direction_id"`
-	ShapeID          		string    	`json:"shape_id"`
-	LeadingVehicleID 		string    	`json:"leading_vehicle_id"`
-	FollowingVehicleID 		string  	`json:"following_vehicle_id"`
-	LeadingTripID    		string    	`json:"leading_trip_id"`
-	FollowingTripID  		string    	`json:"following_trip_id"`
-	DistanceAlongRoute 		float64 	`json:"distance_along_route"`
-	LeadingProgress  		float64   	`json:"leading_progress"`
-	FollowingProgress 		float64  	`json:"following_progress"`
+	RouteID          		string    	`json:"routeId"`
+	DirectionID      		*int       	`json:"directionId"`
+	ShapeID          		string    	`json:"shapeId"`
+	LeadingVehicleID 		string    	`json:"leadingVehicleId"`
+	FollowingVehicleID 		string  	`json:"followingVehicleId"`
+	LeadingTripID    		string    	`json:"leadingTripId"`
+	FollowingTripID  		string    	`json:"followingTripId"`
+	DistanceAlongRoute 		float64 	`json:"distanceAlongRoute"`
+	LeadingProgress  		float64   	`json:"leadingProgress"`
+	FollowingProgress 		float64  	`json:"followingProgress"`
 	Severity        		string    	`json:"severity"`
-	DetectedAt       		time.Time 	`json:"detected_at"`
+	DetectedAt       		time.Time 	`json:"detectedAt"`
 }
 
 type BunchingResponse struct {
-	RouteID string 						`json:"route_id"`
+	RouteID string 						`json:"routeId"`
 	Pairs   []BunchingPairResponse 		`json:"pairs"`
 	Count   int 						`json:"count"`
 }

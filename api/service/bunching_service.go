@@ -7,7 +7,7 @@ import (
 	"realtimetransit/repository"
 )
 
-const maxDistanceThreshold = 750.0 // meters
+const maxDistanceThreshold = 500.0 // meters
 
 type BunchingService struct {
 	bunchingRepo *repository.BunchingRepository
@@ -46,10 +46,10 @@ func (s *BunchingService) GetBunchingPairsByRoute(ctx context.Context, routeID s
 // - Normal: distance >= 300 meters
 func calculateSeverity(distance float64) string {
 	if distance < 100 {
-		return "Severe"
+		return "alert"
 	} else if distance < 300 {
-		return "Warning"
+		return "warning"
 	} else {
-		return "Normal"
+		return "advisory"
 	}
 }
