@@ -47,15 +47,18 @@ export function formatRelative(value: string | Date, now: number = Date.now()): 
 // The API returns times in agency-local seconds, which can exceed 24 hours for trips that run past midnight. 
 // Show the day offset for those cases.
 export function formatGtfsTime(seconds: number | null | undefined): string | null {
-  if (seconds === null || seconds === undefined) return null;
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 || 12;
+  if (seconds === null || seconds === undefined || !Number.isFinite(seconds) || seconds < 0) return null;
 
-  const dayOffset = Math.floor(h / 24);
+  const s = Math.floor(seconds);
+  const dayOffset = Math.floor(s / 86400);
+  const secondsInDay = s % 86400;
+  const h24 = Math.floor(secondsInDay / 3600);
+  const m = Math.floor((secondsInDay % 3600) / 60);
+  const ampm = h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 % 12 || 12;
+
   if (dayOffset > 0) 
-    return `+${dayOffset}d ${hour12}:${m.toString().padStart(2, "0")} ${ampm}`;
+    return `+${dayOffset}d ${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
 
-  return `${hour12}:${m.toString().padStart(2, "0")} ${ampm}`;
+  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
