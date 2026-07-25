@@ -60,3 +60,12 @@ export interface ReliabilityPoint {
   avgDelaySeconds: number; // positive late, negative early
   samples: number;
 }
+
+export interface TripScheduleSummary {
+  tripId: string;
+  directionId: number | null;
+  tripHeadsign: string | null;
+  startSeconds: number | null;
+  endSeconds: number | null;
+  isActive: boolean;
+}

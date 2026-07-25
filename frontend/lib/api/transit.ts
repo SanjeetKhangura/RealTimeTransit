@@ -34,6 +34,7 @@ import type {
   ServiceAlert,
   StopAdherence,
   Vehicle,
+  TripScheduleSummary,
 } from "@/types/api";
 
 export async function getRoutes(signal?: AbortSignal): Promise<RouteSummary[]> {
@@ -143,4 +144,43 @@ export async function getTripUpdates(
     signal,
   );
   return wire.tripUpdates.map(tripUpdateToStopAdherence);
+}
+
+export async function getTripSchedules(
+  routeId: string,
+  signal?: AbortSignal,
+): Promise<TripScheduleSummary[]> {
+  const wire = await apiGet<TripScheduleListWire>(
+    `/api/routes/${routeId}/trips/schedule`,
+    signal,
+  );
+
+  return wire.trips.map((t) => ({
+    tripId: t.tripId,
+    directionId: t.directionId,
+    tripHeadsign: t.tripHeadsign,
+    startSeconds: t.startSeconds,
+    endSeconds: t.endSeconds,
+    isActive: t.isActive,
+  }));
+}
+
+export async function getTripStops(
+  routeId: string,
+  tripId: string,
+  signal?: AbortSignal,
+): Promise<StopAdherence[]> {
+  const wire = await apiGet<TripStopListWire>(
+    `/api/routes/${routeId}/stops?trip_id=${encodeURIComponent(tripId)}`,
+    signal,
+  );
+  // A trip visits each stop once, but dedupe defensively for loop routes.
+  const seen = new Set<string>();
+  const out: StopAdherence[] = [];
+  for (const s of wire.stops) {
+    if (seen.has(s.stopId)) continue;
+    seen.add(s.stopId);
+    out.push(toStopAdherence(s));
+  }
+  return out;
 }

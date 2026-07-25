@@ -13,9 +13,11 @@ export interface PollingState<T> {
 
 // Polls `fetcher` every `intervalMs`. Keeps the last good data when a poll
 // fails, and pauses while the tab is hidden (refreshing on return).
+// `refreshKey` can be used to force a refresh when some external state changes.
 export function usePolling<T>(
   fetcher: (signal: AbortSignal) => Promise<T>,
   intervalMs: number,
+  refreshKey?: string | number | null,
 ): PollingState<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -26,7 +28,7 @@ export function usePolling<T>(
   const fetcherRef = useRef(fetcher);
   useEffect(() => {
     fetcherRef.current = fetcher;
-  });
+  }, [fetcher]);
   const hasDataRef = useRef(false);
   const activeController = useRef<AbortController | null>(null);
 
@@ -55,6 +57,12 @@ export function usePolling<T>(
   }, [load]);
 
   useEffect(() => {
+    // Reset state when the refresh key changes, so the UI can show a loading
+    // indicator while the new data is fetched.
+    setLoading(true);
+    setError(null);
+    setData(null);
+
     void load();
     const id = setInterval(() => {
       if (document.visibilityState === "visible") void load();
@@ -68,7 +76,7 @@ export function usePolling<T>(
       document.removeEventListener("visibilitychange", onVisible);
       activeController.current?.abort();
     };
-  }, [load, intervalMs]);
+  }, [load, intervalMs, refreshKey]);
 
   return { data, error, loading, isStale, lastUpdated, refresh };
 }
