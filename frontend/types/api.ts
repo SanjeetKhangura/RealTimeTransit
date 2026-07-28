@@ -1,7 +1,7 @@
-// Interim hand-written API types.
-// These will be replaced by `openapi-typescript` output once the Go API
-// exposes /openapi.json. Shapes mirror the DB schema so the swap is low
-// friction.
+// UI-facing domain types the components consume. The raw API response shapes
+// live in lib/api/wire.ts and are mapped to these by lib/api/adapters.ts.
+// Fields the API does not provide yet are optional so the UI degrades
+// gracefully against the real backend and fills in when those land.
 
 import type {
   AlertSeverity,
@@ -14,20 +14,15 @@ export interface RouteSummary {
   routeId: string;
   shortName: string;
   longName: string;
-  routeType: number;
-  status: StatusLevel;
-  region?: string; // optional; used for sorting. API may add this later.
-}
-
-export interface RoutesResponse {
-  routes: RouteSummary[];
+  routeType: number | null;
+  status?: StatusLevel; // pending backend (adherence analytics)
+  region?: string; // pending backend
 }
 
 export interface RouteDetail extends RouteSummary {
-  healthScore: number; // 0 to 5
-  dataSource: DataSource;
-  lastUpdated: string; // ISO 8601 UTC
-  shape: [number, number][]; // route polyline as [lat, lon] points
+  healthScore?: number; // 0 to 5
+  dataSource?: DataSource;
+  lastUpdated?: string; // ISO 8601 UTC
 }
 
 export interface Vehicle {
@@ -41,24 +36,14 @@ export interface Vehicle {
   nextStop: string | null;
 }
 
-export interface LiveResponse {
-  dataSource: DataSource;
-  lastUpdated: string;
-  vehicles: Vehicle[];
-}
-
 export interface StopAdherence {
   stopId: string;
   stopName: string;
-  lat: number;
-  lon: number;
-  scheduledArrival: string | null; // ISO 8601 UTC
-  predictedArrival: string | null; // null until ML serves predictions
-  arrivalDelay: number | null; // seconds, can be absent
-}
-
-export interface StopsResponse {
-  stops: StopAdherence[];
+  lat?: number; // map marker coordinate; absent from /trip-updates
+  lon?: number;
+  scheduledArrival: string | null;
+  predictedArrival: string | null;
+  arrivalDelay: number | null;
 }
 
 export interface ServiceAlert {
@@ -66,10 +51,31 @@ export interface ServiceAlert {
   severity: AlertSeverity;
   header: string;
   description: string;
-  startTime: string; // ISO 8601 UTC
+  startTime: string;
   endTime: string | null;
 }
 
-export interface AlertsResponse {
-  alerts: ServiceAlert[];
+export interface ReliabilityPoint {
+  bucket: string; // ISO 8601 UTC
+  avgDelaySeconds: number; // positive late, negative early
+  samples: number;
+}
+
+export interface TripScheduleSummary {
+  tripId: string;
+  directionId: number | null;
+  tripHeadsign: string | null;
+  startSeconds: number | null;
+  endSeconds: number | null;
+  isActive: boolean;
+}
+
+export interface BunchingPair {
+  routeId: string;
+  directionId: number | null;
+  leadingVehicleId: string;
+  followingVehicleId: string;
+  distanceAlongRoute: number;
+  severity: "advisory" | "warning" | "alert";
+  detectedAt: string;
 }

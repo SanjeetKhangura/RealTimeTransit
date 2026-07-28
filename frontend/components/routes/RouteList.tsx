@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { apiGet } from "@/lib/api/client";
+import { getRoutes } from "@/lib/api/transit";
 import { usePolling } from "@/lib/api/polling";
 import { useSavedRoutes } from "@/lib/hooks/useSavedRoutes";
 import { RouteCard } from "./RouteCard";
@@ -12,11 +12,10 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorPanel } from "@/components/ui/ErrorPanel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StaleBanner } from "@/components/ui/StaleBanner";
-import type { RouteSummary, RoutesResponse } from "@/types/api";
+import type { RouteSummary } from "@/types/api";
 import type { StatusLevel } from "@/types/domain";
 
-const fetchRoutes = (signal: AbortSignal) =>
-  apiGet<RoutesResponse>("/api/routes", signal);
+const fetchRoutes = (signal: AbortSignal) => getRoutes(signal);
 
 // numeric:true sorts "2" < "25" < "99" < "250" the way people expect.
 const collator = new Intl.Collator(undefined, {
@@ -75,11 +74,15 @@ export function RouteList() {
     return <ErrorPanel error={error} onRetry={refresh} />;
   }
 
-  const routes = data?.routes ?? [];
+  const routes = data ?? [];
   const q = query.trim().toLowerCase();
   const filtered = routes.filter((r) => {
     if (savedOnly && !saved.includes(r.routeId)) return false;
-    if (statusFilter.length > 0 && !statusFilter.includes(r.status)) return false;
+    if (
+      statusFilter.length > 0 &&
+      (!r.status || !statusFilter.includes(r.status))
+    )
+      return false;
     if (!q) return true;
     return (
       r.shortName.toLowerCase().includes(q) ||

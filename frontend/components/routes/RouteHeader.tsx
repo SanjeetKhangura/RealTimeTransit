@@ -1,32 +1,59 @@
 import { RealtimeStatusIndicator } from "./RealtimeStatusIndicator";
 import type { RouteDetail } from "@/types/api";
+import type { DataSource } from "@/types/domain";
+import { getRouteColoring } from "@/lib/utils/coloring";
 
 function Stars({ score }: { score: number }) {
-  const full = Math.max(0, Math.min(5, Math.round(score)));
+  // Fill proportionally so a 4.5 reads as four and a half stars rather than
+  // rounding up to a full five. The amber layer is clipped over the grey one.
+  const pct = (Math.max(0, Math.min(5, score)) / 5) * 100;
   return (
     <span
+      role="img"
       aria-label={`Health rating ${score} out of 5`}
       title={`Health rating ${score} of 5`}
-      className="text-status-warning"
+      className="relative inline-block leading-none"
     >
-      {"★".repeat(full)}
-      <span className="text-foreground/20">{"★".repeat(5 - full)}</span>
+      <span className="text-foreground/20">★★★★★</span>
+      <span
+        aria-hidden
+        className="absolute inset-0 overflow-hidden text-status-warning"
+        style={{ width: `${pct}%` }}
+      >
+        ★★★★★
+      </span>
     </span>
   );
 }
 
-export function RouteHeader({ route }: { route: RouteDetail }) {
+export function RouteHeader({
+  route,
+  dataSource,
+}: {
+  route: RouteDetail;
+  dataSource: DataSource;
+}) {
+  const color = getRouteColoring(route);
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
-        <span className="inline-flex min-w-12 justify-center rounded-md bg-foreground/10 px-2 py-1 text-lg font-bold">
+        {color.isNamed ? (
+          <span aria-hidden="true" className="h-2 w-16 shrink-0 rounded-full" style={{ backgroundColor: color.color }} />
+        ) : color.displayName === 'West Coast Express' ?(
+          <span className="inline-flex min-w-12 justify-center rounded-md bg-foreground/10 px-2 py-1 text-sm font-bold" style={{ backgroundColor: color.color}}>
           {route.shortName}
         </span>
+        ) : (
+          <span className={["inline-flex min-w-12 justify-center rounded-md bg-foreground/10 px-2 py-1 text-sm font-bold", color.displayName.includes('West Coast Express') ? 'style={{ backgroundColor: color.color}}' : ''].join(" ")}>
+          {route.shortName}
+        </span>
+        )
+        }
         <h1 className="text-xl font-semibold">{route.longName}</h1>
       </div>
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <Stars score={route.healthScore} />
-        <RealtimeStatusIndicator dataSource={route.dataSource} />
+        {route.healthScore !== undefined && <Stars score={route.healthScore} />}
+        <RealtimeStatusIndicator dataSource={dataSource} />
       </div>
     </div>
   );

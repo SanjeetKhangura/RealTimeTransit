@@ -23,4 +23,14 @@ describe("AlertBanner", () => {
     const { container } = render(<AlertBanner alerts={[]} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("shows the scope label when provided", () => {
+    render(<AlertBanner alerts={[alert]} scopeLabel="Network-wide" />);
+    expect(screen.getByText("Network-wide")).toBeInTheDocument();
+  });
+
+  it("omits the scope label by default", () => {
+    render(<AlertBanner alerts={[alert]} />);
+    expect(screen.queryByText("Network-wide")).not.toBeInTheDocument();
+  });
 });

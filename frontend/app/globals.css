@@ -6,6 +6,7 @@
   --status-clear: #16a34a;
   --status-warning: #ca8a04;
   --status-issue: #dc2626;
+  --accent: #2563eb;
 }
 
 @theme inline {
@@ -14,6 +15,7 @@
   --color-status-clear: var(--status-clear);
   --color-status-warning: var(--status-warning);
   --color-status-issue: var(--status-issue);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -28,5 +30,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
