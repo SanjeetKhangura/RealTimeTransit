@@ -253,7 +253,7 @@ function RouteDetailView({ id }: { id: string }) {
                   {availableTrips.map((t) => (
                     <option key={t.tripId} value={t.tripId}>
                       {formatGtfsTime(t.startSeconds)??"Unknown departure"}
-                      {isTripLive(t, agencySecondsNow()) ? " - live)" : ""}
+                      {isTripLive(t, agencySecondsNow()) ? " - Live" : ""}
                     </option>
                   ))}
                 </select>

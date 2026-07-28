@@ -12,11 +12,11 @@ export function AdherenceSummary({ stops }: AdherenceSummaryProps) {
     }
 
     // Calculate the percentage of on-time arrivals (within 3 minutes of scheduled time)
-    const onTimeCount = samples.filter((s) => (s.arrivalDelay ?? 0) < 180).length;
-    // Calculate the percentage of minor delays (between 3 and 8 minutes late)
-    const minorDelayCount = samples.filter((s) => (s.arrivalDelay ?? 0) >= 180 && (s.arrivalDelay ?? 0) < 480).length;
-    // Calculate the percentage of major delays (8 minutes or more late)
-    const majorDelayCount = samples.filter((s) => (s.arrivalDelay ?? 0) >= 480).length;
+    const onTimeCount = samples.filter((s) => (Math.abs(s.arrivalDelay ?? 0)) < 180).length;
+    // Calculate the percentage of minor delays (between 3 and 8 minutes late/early)
+    const minorDelayCount = samples.filter((s) => Math.abs(s.arrivalDelay ?? 0) >= 180 && Math.abs(s.arrivalDelay ?? 0) < 480).length;
+    // Calculate the percentage of major delays (8 minutes or more late/early)
+    const majorDelayCount = samples.filter((s) => Math.abs(s.arrivalDelay ?? 0) >= 480).length;
     // Calculate the average delay in seconds by summing the arrival delays and dividing by the number of samples
     const avgDelaySeconds = samples.reduce((sum, s) => sum + (s.arrivalDelay ?? 0), 0) / samples.length;
     // Percentage function to calculate the percentage of a count relative to the total number of samples
