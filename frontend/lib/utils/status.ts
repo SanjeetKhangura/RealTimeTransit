@@ -36,7 +36,7 @@ export function statusMeta(level: StatusLevel): StatusMeta {
 // Map an average schedule deviation (seconds) to a status level.
 // Positive or negative both count as deviation.
 export function statusFromDelay(avgDelaySeconds: number): StatusLevel {
-  const minutes = avgDelaySeconds / 60;
+  const minutes = Math.abs(avgDelaySeconds) / 60;
   if (minutes < 3) return "clear";
   if (minutes < 8) return "warning";
   return "issue";

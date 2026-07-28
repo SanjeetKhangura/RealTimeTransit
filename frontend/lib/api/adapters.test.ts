@@ -155,8 +155,8 @@ const baseStop: StopWire = {
   stopDesc: null,
   wheelchairBoarding: null,
   stopSequence: 1,
-  arrivalSeconds: null,
-  departureSeconds: null,
+  arrivalSeconds: 15 * 3600 + 5 * 60, // 15:05
+  departureSeconds: 15 * 3600 + 6 * 60, // 15:06
   arrivalDelay: 120,
   arrivalTime: "2026-07-06T22:07:00Z",
 };
@@ -167,7 +167,7 @@ describe("toStopAdherence", () => {
     expect(row.stopName).toBe("Terminal");
     expect(row.lat).toBe(49.26);
     expect(row.predictedArrival).toBe("2026-07-06T22:07:00Z");
-    expect(row.scheduledArrival).toBe("2026-07-06T22:05:00.000Z");
+    expect(row.scheduledArrival).toBe("3:05 PM");
     expect(row.arrivalDelay).toBe(120);
   });
 
@@ -179,10 +179,12 @@ describe("toStopAdherence", () => {
       stopLon: null,
       arrivalDelay: null,
       arrivalTime: null,
+      arrivalSeconds: null,
+      departureSeconds: 15 * 3600 + 6 * 60, // 15:06
     });
     expect(row.stopName).toBe("99-S1");
     expect(row.lat).toBeUndefined();
-    expect(row.scheduledArrival).toBeNull();
+    expect(row.scheduledArrival).toBe("3:06 PM");
     expect(row.predictedArrival).toBeNull();
   });
 });

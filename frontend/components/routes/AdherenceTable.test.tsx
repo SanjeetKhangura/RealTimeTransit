@@ -9,7 +9,7 @@ const stops: StopAdherence[] = [
     stopName: "Terminal",
     lat: 49.26,
     lon: -123.11,
-    scheduledArrival: "2026-06-09T22:07:00Z", // 3:07 PM in Vancouver
+    scheduledArrival: "3:07 PM", // changed from UTC time to local time since it's already been converted in the adapter
     predictedArrival: null,
     arrivalDelay: 0,
   },
@@ -20,7 +20,7 @@ describe("AdherenceTable", () => {
     render(<AdherenceTable stops={stops} />);
     expect(screen.getByText("Terminal")).toBeInTheDocument();
     expect(screen.getByText("3:07 PM")).toBeInTheDocument();
-    expect(screen.getByText("N/A")).toBeInTheDocument();
+    expect(screen.getByText("No prediction available")).toBeInTheDocument();
   });
 
   it("shows an empty state when there are no stops", () => {
