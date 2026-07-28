@@ -1,0 +1,14 @@
+# Binary
+transit-api
+*.exe
+
+# Environment variables — never commit
+.env
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
