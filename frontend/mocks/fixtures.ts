@@ -1,3 +1,4 @@
+import { agencySecondsNow } from "@/lib/utils/format";
 import type { StatusLevel, VehicleStatus } from "@/types/domain";
 import type {
   AlertListWire,
@@ -200,20 +201,29 @@ export function routeStops(routeId: string, tripId: string): TripStopListWire {
   const [lat, lon] = routeBase(route);
   const now = Date.now();
   const delay = DELAY_BY_STATUS[route.status];
-  const stops: StopWire[] = STOP_NAMES.map((name, i) => ({
-    stopId: `${routeId}-S${i + 1}`,
-    stopName: name,
-    stopLat: lat + (i - 2) * 0.004,
-    stopLon: lon + (i - 2) * 0.012,
-    stopCode: null,
-    stopDesc: null,
-    wheelchairBoarding: null,
-    stopSequence: i + 1,
-    arrivalSeconds: null,
-    departureSeconds: null,
-    arrivalDelay: i === 0 ? 0 : delay,
-    arrivalTime: new Date(now + i * 5 * 60_000).toISOString(),
-  }));
+  // The API sends the static scheduled time as seconds since midnight, and the
+  // adapter reads it from there, so emit it the same way. Scheduled is the
+  // predicted arrival minus that stop's delay, which keeps the two columns
+  // consistent with each other.
+  const baseSeconds = agencySecondsNow(now);
+  const stops: StopWire[] = STOP_NAMES.map((name, i) => {
+    const stopDelay = i === 0 ? 0 : delay;
+    const scheduledSeconds = baseSeconds + i * 300 - stopDelay;
+    return {
+      stopId: `${routeId}-S${i + 1}`,
+      stopName: name,
+      stopLat: lat + (i - 2) * 0.004,
+      stopLon: lon + (i - 2) * 0.012,
+      stopCode: null,
+      stopDesc: null,
+      wheelchairBoarding: null,
+      stopSequence: i + 1,
+      arrivalSeconds: scheduledSeconds,
+      departureSeconds: scheduledSeconds + 60,
+      arrivalDelay: stopDelay,
+      arrivalTime: new Date(now + i * 5 * 60_000).toISOString(),
+    };
+  });
   return { routeId, tripId, stops, total: stops.length };
 }
 
