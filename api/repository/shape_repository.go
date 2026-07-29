@@ -49,16 +49,16 @@ func (r *ShapeRepository) GetMostCommonShapeIDForRoute(ctx context.Context, rout
 func (r *ShapeRepository) GetShapePoints(ctx context.Context, shapeID string, datasetID int) ([]models.ShapePoint, error) {
 	query := `
 		SELECT
-			ST_Y(geom)                               AS lat,
-			ST_X(geom)                               AS lon,
-			generate_series(1, ST_NumPoints(geom))   AS sequence
-		FROM (
-			SELECT
-				ST_PointN(geom, generate_series(1, ST_NumPoints(geom))) AS geom
-			FROM shape_paths
-			WHERE shape_id = $1
-			AND dataset_id = $2
-		) points
+    		ST_Y(dp.geom) AS lat,
+    		ST_X(dp.geom) AS lon,
+    		ROW_NUMBER() OVER (
+        		ORDER BY dp.path
+    		)::integer AS sequence
+		FROM shape_paths sp
+		CROSS JOIN LATERAL ST_DumpPoints(sp.geom) AS dp
+		WHERE sp.shape_id = $1
+		AND sp.dataset_id = $2
+		ORDER BY dp.path;
 	`
 
 	rows, err := r.pool.Query(ctx, query, shapeID, datasetID)
