@@ -38,17 +38,23 @@ export function RouteHeader({
     <div className="space-y-2">
       <div className="flex items-center gap-3">
         {color.isNamed ? (
-          <span aria-hidden="true" className="h-2 w-16 shrink-0 rounded-full" style={{ backgroundColor: color.color }} />
-        ) : color.displayName === 'West Coast Express' ?(
-          <span className="inline-flex min-w-12 justify-center rounded-md bg-foreground/10 px-2 py-1 text-sm font-bold" style={{ backgroundColor: color.color}}>
-          {route.shortName}
-        </span>
+          <span
+            aria-hidden="true"
+            className="h-2 w-16 shrink-0 rounded-full"
+            style={{ backgroundColor: color.color }}
+          />
         ) : (
-          <span className={["inline-flex min-w-12 justify-center rounded-md bg-foreground/10 px-2 py-1 text-sm font-bold", color.displayName.includes('West Coast Express') ? 'style={{ backgroundColor: color.color}}' : ''].join(" ")}>
-          {route.shortName}
-        </span>
-        )
-        }
+          <span
+            className="inline-flex min-w-12 justify-center rounded-md bg-foreground/10 px-2 py-1 text-sm font-bold"
+            style={
+              color.displayName === "West Coast Express"
+                ? { backgroundColor: color.color }
+                : undefined
+            }
+          >
+            {route.shortName}
+          </span>
+        )}
         <h1 className="text-xl font-semibold">{route.longName}</h1>
       </div>
       <div className="flex flex-wrap items-center gap-3 text-sm">

@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatHour, formatDateTime } from "@/lib/utils/format";
+import { formatDateTime } from "@/lib/utils/format";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { ReliabilityPoint } from "@/types/api";
 

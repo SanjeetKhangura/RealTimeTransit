@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { usePolling } from "@/lib/api/polling";
 import {
@@ -11,7 +11,6 @@ import {
   getLiveVehicles,
   getRoute,
   getShape,
-  getStops,
   getSystemAlerts,
   getTripSchedules,
   getTripStops,
@@ -69,17 +68,15 @@ function isTripLive(trip: TripScheduleSummary, now: number): boolean {
 }
 
 function RouteDetailView({ id }: { id: string }) {
-  const [selectedDirection, setSelectedDirection] = useState<string>("");
-  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  // These hold what the user explicitly picked. The effective selection is
+  // derived below, so a pick that is no longer on offer (the schedule reloaded,
+  // the direction changed) falls back on its own without an effect writing
+  // state back during render.
+  const [pickedDirection, setPickedDirection] = useState<string>("");
+  const [pickedTripId, setPickedTripId] = useState<string | null>(null);
 
   const detail = usePolling((signal) => getRoute(id, signal), 30_000);
   const live = usePolling((signal) => getLiveVehicles(id, signal), 15_000);
-  // /stops feeds both the map markers (names + coordinates) and the schedule
-  // table (scheduled + realtime times).
-  const stops = usePolling((signal) => {
-    if (!selectedTripId) return Promise.resolve([]);
-    return getTripStops(id, selectedTripId, signal);
-  }, 30_000, `${id}:${selectedTripId} ?? "none"`);
   const alerts = usePolling((signal) => getAlerts(id, signal), 30_000);
   // Agency-wide alerts are the same on every route, so this is not keyed by id.
   const systemAlerts = usePolling((signal) => getSystemAlerts(signal), 60_000);
@@ -87,7 +84,7 @@ function RouteDetailView({ id }: { id: string }) {
   // The route shape is static, so fetch it rarely (effectively once per visit).
   const shape = usePolling((signal) => getShape(id, signal), 3_600_000);
   // Trip schedules are used to pick the active trip and fetch its stops.
-  const tripSchedules = usePolling((signal) => getTripSchedules(id, signal), 300_000,);
+  const tripSchedules = usePolling((signal) => getTripSchedules(id, signal), 300_000);
   // Bunching pairs are polled to detect potential bunching situations on the route.
   const bunchingPairs = usePolling((signal) => getBunchingPairs(id, signal), 30_000);
 
@@ -102,48 +99,36 @@ function RouteDetailView({ id }: { id: string }) {
     return Array.from(map.values());
   }, [tripSchedules.data]);
 
-  const availableTrips = useMemo(() => {
-    return (tripSchedules.data ?? []).filter((t) => getDirectionKey(t) === selectedDirection);
-  }, [tripSchedules.data, selectedDirection]);
+  // Keep the picked direction while it still exists, else fall back to the first.
+  const selectedDirection =
+    directions.length === 0
+      ? ""
+      : directions.some((d) => d.key === pickedDirection)
+        ? pickedDirection
+        : directions[0].key;
 
-  // Select the first direction when the trip schedules are loaded or change.
-  useEffect(() => {
-    if (directions.length === 0) {
-      setSelectedDirection("");
-      return;
-    }
+  const availableTrips = (tripSchedules.data ?? []).filter(
+    (t) => getDirectionKey(t) === selectedDirection,
+  );
 
-    // If the currently selected direction is still in the list, keep it.
-    const directionExists = directions.some((d) => d.key === selectedDirection);
-    if (!directionExists) {
-      setSelectedDirection(directions[0].key);
-    }
-  }, [directions, selectedDirection]);
+  // Keep the picked trip while it is still on offer, else prefer a live trip,
+  // then the next one to depart, then the first of the day.
+  const now = agencySecondsNow();
+  const selectedTripId =
+    availableTrips.length === 0
+      ? null
+      : (availableTrips.find((t) => t.tripId === pickedTripId) ??
+          availableTrips.find((t) => isTripLive(t, now)) ??
+          availableTrips.find((t) => t.startSeconds !== null && t.startSeconds >= now) ??
+          availableTrips[0]).tripId;
 
-  // Select the first active trip or the first trip when the available trips change.
-  useEffect(() => {
-    if (availableTrips.length === 0) {
-      setSelectedTripId(null);
-      return;
-    }
-
-    // If the currently selected trip is still in the list, keep it.
-    const tripExists = availableTrips.some((t) => t.tripId === selectedTripId);
-    
-    if (tripExists) {
-      return;
-    }
-
-    // Prefer an active trip if available.
-    const now = agencySecondsNow();
-    // Find the first trip that is active or starts in the future, else pick the first trip.
-    const defaultTrip = availableTrips.find((t) => isTripLive(t, now)) ?? availableTrips.find(
-      (t) => 
-        t.startSeconds !== null &&
-        t.startSeconds >= now,)
-        ?? availableTrips[0];
-        setSelectedTripId(defaultTrip.tripId);
-  }, [availableTrips, selectedTripId]);
+  // The stops call depends on the trip we settled on above, so it comes last.
+  // /stops feeds both the map markers (names + coordinates) and the schedule
+  // table (scheduled + realtime times).
+  const stops = usePolling((signal) => {
+    if (!selectedTripId) return Promise.resolve([]);
+    return getTripStops(id, selectedTripId, signal);
+  }, 30_000, `${id}:${selectedTripId ?? "none"}`);
 
   if (detail.loading) {
     return (
@@ -229,8 +214,8 @@ function RouteDetailView({ id }: { id: string }) {
                 <select
                   value={selectedDirection}
                   onChange={(e) => {
-                    setSelectedDirection(e.target.value);
-                    setSelectedTripId(null);
+                    setPickedDirection(e.target.value);
+                    setPickedTripId(null);
                   }}
                   className="rounded-lg border border-foreground/15 bg-background px-3 py-2 text-sm"
                   >
@@ -246,7 +231,7 @@ function RouteDetailView({ id }: { id: string }) {
 
                 <select
                   value={selectedTripId ?? ""}
-                  onChange={(e) => setSelectedTripId(e.target.value)}
+                  onChange={(e) => setPickedTripId(e.target.value)}
                   className="rounded-lg border border-foreground/15 bg-background px-3 py-2 text-sm"
                   disabled={availableTrips.length === 0}
                 >

@@ -25,6 +25,18 @@ export function usePolling<T>(
   const [isStale, setIsStale] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Clear the old data when the refresh key changes, so the UI shows a loading
+  // indicator instead of the previous key's results while the new fetch runs.
+  // React's supported way to adjust state when an input changes is during
+  // render rather than in an effect, which also avoids a wasted render pass.
+  const [prevRefreshKey, setPrevRefreshKey] = useState(refreshKey);
+  if (refreshKey !== prevRefreshKey) {
+    setPrevRefreshKey(refreshKey);
+    setLoading(true);
+    setError(null);
+    setData(null);
+  }
+
   const fetcherRef = useRef(fetcher);
   useEffect(() => {
     fetcherRef.current = fetcher;
@@ -57,12 +69,6 @@ export function usePolling<T>(
   }, [load]);
 
   useEffect(() => {
-    // Reset state when the refresh key changes, so the UI can show a loading
-    // indicator while the new data is fetched.
-    setLoading(true);
-    setError(null);
-    setData(null);
-
     void load();
     const id = setInterval(() => {
       if (document.visibilityState === "visible") void load();
